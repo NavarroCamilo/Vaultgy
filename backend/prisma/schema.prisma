@@ -1,9 +1,103 @@
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum LibraryStatus {
+  BACKLOG
+  PLAYING
+  COMPLETED
+  DROPPED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// USERS------------------------------------------------------------------------------
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   @default("USER")
+
+  reviews   Review[]
+  library   LibraryItem[]
+  waitlist  WaitlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// GAMES------------------------------------------------------------------------------
+model Game {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  coverImage  String?
+  releaseDate DateTime?
+  genre       String?
+
+  reviews     Review[]
+  library     LibraryItem[]
+  waitlist    WaitlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([title])
+}
+
+// LIBRARY----------------------------------------------------------------------------
+model LibraryItem {
+  id        String         @id @default(uuid())
+  status    LibraryStatus  @default(BACKLOG)
+  userId    String
+  gameId    String
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game           @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, gameId])
+  @@index([userId])
+}
+
+// REVIEWS----------------------------------------------------------------------------
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int      
+  comment   String?
+  userId    String
+  gameId    String
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, gameId]) // No multiple reviews per user per game
+  @@index([gameId])
+}
+
+// WAITLIST---------------------------------------------------------------------------
+model WaitlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  gameId    String
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, gameId])
+  @@index([userId])
 }
