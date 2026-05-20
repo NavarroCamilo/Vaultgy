@@ -24,7 +24,7 @@ model User {
   username  String   @unique
   email     String   @unique
   password  String
-  role      String   @default("USER")
+  role      Role     @default(USER)
 
   reviews   Review[]
   library   LibraryItem[]

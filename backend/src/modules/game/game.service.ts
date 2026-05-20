@@ -11,6 +11,18 @@ import { UpdateGameDto } from './dto/update-game.dto';
 export class GameService {
     constructor(private readonly prisma: PrismaService) { }
 
+    private parseDate(date?: string): Date | undefined {
+        if (!date) return undefined;
+
+        const parsed = new Date(date);
+
+        if (Number.isNaN(parsed.getTime())) {
+            throw new BadRequestException('Invalid releaseDate format');
+        }
+
+        return parsed;
+    }
+
     async findAll(take?: number) {
         return this.prisma.game.findMany({
             ...(take ? { take } : {}),
@@ -78,18 +90,6 @@ export class GameService {
         }
 
         return games;
-    }
-
-    private parseDate(date?: string): Date | undefined {
-        if (!date) return undefined;
-
-        const parsed = new Date(date);
-
-        if (Number.isNaN(parsed.getTime())) {
-            throw new BadRequestException('Invalid releaseDate format');
-        }
-
-        return parsed;
     }
 
     async create(createGameDto: CreateGameDto) {

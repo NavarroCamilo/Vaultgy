@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import * as bcrypt from 'bcryptjs';
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -120,13 +121,52 @@ const games = [
   },
 ];
 
+const users = [
+  {
+    username: 'admin',
+    email: 'admin@vaultgy.local',
+    password: 'Admin123!@#',
+    role: 'ADMIN',
+  },
+  {
+    username: 'alice',
+    email: 'alice@vaultgy.local',
+    password: 'User123!@#',
+    role: 'USER',
+  },
+  {
+    username: 'bob',
+    email: 'bob@vaultgy.local',
+    password: 'User123!@#',
+    role: 'USER',
+  },
+];
+
 async function main() {
+  await prisma.review.deleteMany();
+  await prisma.libraryItem.deleteMany();
+  await prisma.waitlistItem.deleteMany();
   await prisma.game.deleteMany();
+  await prisma.user.deleteMany();
+
   await prisma.game.createMany({
     data: games,
   });
 
-  console.log(`Seed completed: ${games.length} games created.`);
+  await prisma.user.createMany({
+    data: await Promise.all(
+      users.map(async (user) => ({
+        username: user.username,
+        email: user.email,
+        password: await bcrypt.hash(user.password, 10),
+        role: user.role,
+      })),
+    ),
+  });
+
+  console.log(
+    `Seed completed: ${games.length} games created and ${users.length} users created.`,
+  );
 }
 
 main()
