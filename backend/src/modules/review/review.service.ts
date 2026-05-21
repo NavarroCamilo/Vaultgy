@@ -127,6 +127,14 @@ export class ReviewService {
 			orderBy: {
 				createdAt: 'desc',
 			},
+			include: {
+				user: {
+					select: {
+						id: true,
+						username: true,
+					},
+				},
+			},
 		});
 	}
 
@@ -145,6 +153,14 @@ export class ReviewService {
 				take: pageSize,
 				orderBy: {
 					createdAt: 'desc',
+				},
+				include: {
+					user: {
+						select: {
+							id: true,
+							username: true,
+						},
+					},
 				},
 			}),
 			this.prisma.review.count({ where: { gameId } }),

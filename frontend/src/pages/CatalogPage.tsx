@@ -6,6 +6,7 @@ type CatalogPageProps = {
   resetSignal: number
   libraryGameIds: string[]
   wishlistGameIds: string[]
+  onOpenGame: (gameId: string) => void
   onAddToLibrary: (gameId: string) => Promise<void>
   onAddToWishlist: (gameId: string) => Promise<void>
   onRemoveFromWishlist: (gameId: string) => Promise<void>
@@ -15,6 +16,7 @@ function CatalogPage({
   resetSignal,
   libraryGameIds,
   wishlistGameIds,
+  onOpenGame,
   onAddToLibrary,
   onAddToWishlist,
   onRemoveFromWishlist,
@@ -97,6 +99,10 @@ function CatalogPage({
     }
   }
 
+  const openGameCard = (gameId: string) => {
+    onOpenGame(gameId)
+  }
+
   return (
     <>
       <section className="hero-banner">
@@ -145,7 +151,20 @@ function CatalogPage({
           const inWishlist = wishlistGameIds.includes(game.id)
 
           return (
-            <article className="game-card" key={game.id}>
+            <article
+              className="game-card interactive"
+              key={game.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Abrir detalle de ${game.title}`}
+              onClick={() => openGameCard(game.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  openGameCard(game.id)
+                }
+              }}
+            >
               <img
                 src={game.coverImage || 'https://placehold.co/600x350/1f2937/e5e7eb?text=Vaultgy'}
                 alt={game.title}
@@ -159,7 +178,10 @@ function CatalogPage({
                     <button
                       type="button"
                       className="secondary-btn"
-                      onClick={() => onAddToWishlist(game.id)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void onAddToWishlist(game.id)
+                      }}
                     >
                       Lista de deseados
                     </button>
@@ -169,7 +191,10 @@ function CatalogPage({
                     <button
                       type="button"
                       className="secondary-btn"
-                      onClick={() => onRemoveFromWishlist(game.id)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void onRemoveFromWishlist(game.id)
+                      }}
                     >
                       Eliminar de deseados
                     </button>
@@ -178,7 +203,10 @@ function CatalogPage({
                   <button
                     type="button"
                     className="primary-btn"
-                    onClick={() => onAddToLibrary(game.id)}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      void onAddToLibrary(game.id)
+                    }}
                   >
                     Biblioteca
                   </button>

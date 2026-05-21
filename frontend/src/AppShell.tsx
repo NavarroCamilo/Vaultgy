@@ -2,17 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { api } from './api/http'
 import ToastStack from './components/ToastStack'
+import GameDetailsPage from './pages/GameDetailsPage'
 import CatalogPage from './pages/CatalogPage'
 import WishlistPage from './pages/WishlistPage'
 import type { CollectionItem, Toast, ToastKind, User } from './types/domain'
 import './App.css'
 
-type ActiveView = 'catalog' | 'wishlist'
+type ActiveView = 'catalog' | 'wishlist' | 'details'
 
 function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeView, setActiveView] = useState<ActiveView>('catalog')
   const [catalogResetKey, setCatalogResetKey] = useState(0)
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
+  const [detailsReturnView, setDetailsReturnView] = useState<Exclude<ActiveView, 'details'>>('catalog')
 
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
@@ -157,7 +160,16 @@ function AppShell() {
 
   const handleBrandClick = () => {
     setActiveView('catalog')
+    setSelectedGameId(null)
+    setDetailsReturnView('catalog')
     setCatalogResetKey((previous) => previous + 1)
+    setMenuOpen(false)
+  }
+
+  const openGameDetails = (gameId: string, returnView: Exclude<ActiveView, 'details'>) => {
+    setSelectedGameId(gameId)
+    setActiveView('details')
+    setDetailsReturnView(returnView)
     setMenuOpen(false)
   }
 
@@ -230,6 +242,8 @@ function AppShell() {
       setMenuOpen(false)
       setAuthOpen(false)
       setActiveView('catalog')
+      setSelectedGameId(null)
+      setDetailsReturnView('catalog')
       pushToast('info', 'Sesión cerrada')
     }
   }
@@ -400,6 +414,8 @@ function AppShell() {
             className={`panel-link ${activeView === 'catalog' ? 'active' : ''}`}
             onClick={() => {
               setActiveView('catalog')
+              setSelectedGameId(null)
+              setDetailsReturnView('catalog')
               setCatalogResetKey((previous) => previous + 1)
               setMenuOpen(false)
             }}
@@ -411,6 +427,8 @@ function AppShell() {
             className={`panel-link ${activeView === 'wishlist' ? 'active' : ''}`}
             onClick={() => {
               setActiveView('wishlist')
+              setSelectedGameId(null)
+              setDetailsReturnView('wishlist')
               setMenuOpen(false)
             }}
           >
@@ -429,7 +447,21 @@ function AppShell() {
           <WishlistPage
             wishlistGameIds={wishlistGameIds}
             libraryGameIds={libraryGameIds}
+            onOpenGame={(gameId) => openGameDetails(gameId, 'wishlist')}
             onAddToLibrary={handleAddToLibrary}
+            onRemoveFromWishlist={handleRemoveFromWishlist}
+          />
+        ) : activeView === 'details' && selectedGameId ? (
+          <GameDetailsPage
+            gameId={selectedGameId}
+            libraryGameIds={libraryGameIds}
+            wishlistGameIds={wishlistGameIds}
+            onBack={() => {
+              setSelectedGameId(null)
+              setActiveView(detailsReturnView)
+            }}
+            onAddToLibrary={handleAddToLibrary}
+            onAddToWishlist={handleAddToWishlist}
             onRemoveFromWishlist={handleRemoveFromWishlist}
           />
         ) : (
@@ -437,6 +469,7 @@ function AppShell() {
             resetSignal={catalogResetKey}
             libraryGameIds={libraryGameIds}
             wishlistGameIds={wishlistGameIds}
+            onOpenGame={(gameId) => openGameDetails(gameId, 'catalog')}
             onAddToLibrary={handleAddToLibrary}
             onAddToWishlist={handleAddToWishlist}
             onRemoveFromWishlist={handleRemoveFromWishlist}

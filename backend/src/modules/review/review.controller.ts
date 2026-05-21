@@ -9,9 +9,8 @@ import {
 	Patch,
 	Post,
 	Query,
+	UseGuards,
 } from '@nestjs/common';
-
-import { UseGuards } from '@nestjs/common';
 
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
@@ -21,12 +20,12 @@ import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 
 @Controller('reviews')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
 export class ReviewController {
 	constructor(private readonly reviewService: ReviewService) {}
 
 	@Post()
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	create(@Body() createReviewDto: CreateReviewDto) {
 		return this.reviewService.create(createReviewDto);
 	}
@@ -64,21 +63,29 @@ export class ReviewController {
 	}
 
 	@Get('user/:userId')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	findAllByUser(@Param('userId') userId: string) {
 		return this.reviewService.findAllByUser(userId);
 	}
 
 	@Get(':id')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	findById(@Param('id') id: string) {
 		return this.reviewService.findById(id);
 	}
 
 	@Patch(':id')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
 		return this.reviewService.update(id, updateReviewDto);
 	}
 
 	@Delete(':id')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	delete(@Param('id') id: string) {
 		return this.reviewService.delete(id);
 	}

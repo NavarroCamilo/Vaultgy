@@ -3,7 +3,10 @@ export type Game = {
   title: string
   description?: string | null
   coverImage?: string | null
+  releaseDate?: string | null
   genre?: string | null
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type User = {
@@ -15,6 +18,27 @@ export type User = {
 
 export type CollectionItem = {
   gameId: string
+}
+
+export type GameReview = {
+  id: string
+  rating: number
+  comment?: string | null
+  createdAt: string
+  user: {
+    id: string
+    username: string
+  }
+}
+
+export type GameAverage = {
+  gameId: string
+  average: number | null
+}
+
+export type GameReviewCount = {
+  gameId: string
+  count: number
 }
 
 export type ToastKind = 'success' | 'error' | 'info'

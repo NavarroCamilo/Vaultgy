@@ -5,6 +5,7 @@ import type { Game } from '../types/domain'
 type WishlistPageProps = {
   wishlistGameIds: string[]
   libraryGameIds: string[]
+  onOpenGame: (gameId: string) => void
   onAddToLibrary: (gameId: string) => Promise<void>
   onRemoveFromWishlist: (gameId: string) => Promise<void>
 }
@@ -12,6 +13,7 @@ type WishlistPageProps = {
 function WishlistPage({
   wishlistGameIds,
   libraryGameIds,
+  onOpenGame,
   onAddToLibrary,
   onRemoveFromWishlist,
 }: WishlistPageProps) {
@@ -39,6 +41,10 @@ function WishlistPage({
 
   const wishlistGames = games.filter((game) => wishlistGameIds.includes(game.id))
 
+  const openGameCard = (gameId: string) => {
+    onOpenGame(gameId)
+  }
+
   return (
     <>
       <section className="hero-banner">
@@ -61,7 +67,20 @@ function WishlistPage({
           const inLibrary = libraryGameIds.includes(game.id)
 
           return (
-            <article className="game-card" key={game.id}>
+            <article
+              className="game-card interactive"
+              key={game.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Abrir detalle de ${game.title}`}
+              onClick={() => openGameCard(game.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  openGameCard(game.id)
+                }
+              }}
+            >
               <img
                 src={game.coverImage || 'https://placehold.co/600x350/1f2937/e5e7eb?text=Vaultgy'}
                 alt={game.title}
@@ -74,7 +93,10 @@ function WishlistPage({
                   <button
                     type="button"
                     className="secondary-btn"
-                    onClick={() => onRemoveFromWishlist(game.id)}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      void onRemoveFromWishlist(game.id)
+                    }}
                   >
                     Eliminar de deseados
                   </button>
@@ -83,7 +105,10 @@ function WishlistPage({
                     <button
                       type="button"
                       className="primary-btn"
-                      onClick={() => onAddToLibrary(game.id)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void onAddToLibrary(game.id)
+                      }}
                     >
                       Biblioteca
                     </button>
