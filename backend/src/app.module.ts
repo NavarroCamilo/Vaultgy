@@ -5,11 +5,11 @@ import {PrismaModule} from './modules/prisma/prisma.module';
 import {GameModule} from './modules/game/game.module';
 import {UserModule} from './modules/user/user.module';
 import {AuthModule} from './modules/auth/auth.module';
-import {WaitlistModule} from './modules/waitlist/waitlist.module';
+import {WishlistModule} from './modules/wishlist/wishlist.module';
 import {LibraryModule} from './modules/library/library.module';
 import {ReviewModule} from './modules/review/review.module';
 
 @Module({
-  imports: [PrismaModule, GameModule, UserModule, AuthModule, WaitlistModule, LibraryModule, ReviewModule], 
+  imports: [PrismaModule, GameModule, UserModule, AuthModule, WishlistModule, LibraryModule, ReviewModule], 
 })
 export class AppModule {}

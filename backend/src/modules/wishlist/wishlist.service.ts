@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class WaitlistService {
+export class WishlistService {
   constructor(private readonly prisma: PrismaService) {}
 
   private async ensureUserExists(userId: string) {
@@ -32,11 +32,10 @@ export class WaitlistService {
     }
   }
 
-  async addToWaitlist(userId: string, gameId: string) {
+  async addToWishlist(userId: string, gameId: string) {
     await this.ensureUserExists(userId);
     await this.ensureGameExists(gameId);
 
-    // Prevent adding to waitlist if already in library
     const inLibrary = await this.prisma.libraryItem.findFirst({
       where: { userId, gameId },
       select: { id: true },
@@ -46,15 +45,15 @@ export class WaitlistService {
       throw new ConflictException('Game is already in library');
     }
 
-    const existing = await this.prisma.waitlistItem.findFirst({
+    const existing = await this.prisma.wishlistItem.findFirst({
       where: { userId, gameId },
     });
 
     if (existing) {
-      throw new ConflictException('Game is already in waitlist');
+      throw new ConflictException('Game is already in wishlist');
     }
 
-    return this.prisma.waitlistItem.create({
+    return this.prisma.wishlistItem.create({
       data: {
         userId,
         gameId,
@@ -62,24 +61,24 @@ export class WaitlistService {
     });
   }
 
-  async removeFromWaitlist(userId: string, gameId: string) {
-    const waitlistItem = await this.prisma.waitlistItem.findFirst({
+  async removeFromWishlist(userId: string, gameId: string) {
+    const wishlistItem = await this.prisma.wishlistItem.findFirst({
       where: { userId, gameId },
     });
 
-    if (!waitlistItem) {
-      throw new NotFoundException('Waitlist item not found');
+    if (!wishlistItem) {
+      throw new NotFoundException('Wishlist item not found');
     }
 
-    return this.prisma.waitlistItem.delete({
-      where: { id: waitlistItem.id },
+    return this.prisma.wishlistItem.delete({
+      where: { id: wishlistItem.id },
     });
   }
 
-  async getUserWaitlist(userId: string) {
+  async getUserWishlist(userId: string) {
     await this.ensureUserExists(userId);
 
-    return this.prisma.waitlistItem.findMany({
+    return this.prisma.wishlistItem.findMany({
       where: { userId },
       orderBy: {
         createdAt: 'desc',
@@ -87,15 +86,15 @@ export class WaitlistService {
     });
   }
 
-  async isInWaitlist(userId: string, gameId: string) {
+  async isInWishlist(userId: string, gameId: string) {
     await this.ensureUserExists(userId);
     await this.ensureGameExists(gameId);
 
-    const waitlistItem = await this.prisma.waitlistItem.findFirst({
+    const wishlistItem = await this.prisma.wishlistItem.findFirst({
       where: { userId, gameId },
       select: { id: true },
     });
 
-    return Boolean(waitlistItem);
+    return Boolean(wishlistItem);
   }
 }

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcryptjs';
 
@@ -121,7 +121,12 @@ const games = [
   },
 ];
 
-const users = [
+const users: Array<{
+  username: string;
+  email: string;
+  password: string;
+  role: Role;
+}> = [
   {
     username: 'admin',
     email: 'admin@vaultgy.local',
@@ -145,7 +150,7 @@ const users = [
 async function main() {
   await prisma.review.deleteMany();
   await prisma.libraryItem.deleteMany();
-  await prisma.waitlistItem.deleteMany();
+  await prisma.wishlistItem.deleteMany();
   await prisma.game.deleteMany();
   await prisma.user.deleteMany();
 

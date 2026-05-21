@@ -252,9 +252,9 @@ function App() {
     }
   }
 
-  const handleAddToWaitlist = async (gameId: string) => {
+  const handleAddToWishlist = async (gameId: string) => {
     try {
-      await api.post(`/users/me/waitlist/${gameId}`)
+      await api.post(`/users/me/wishlist/${gameId}`)
       alert('Agregado a la lista de deseado')
     } catch {
       alert('No se pudo agregar a la lista de deseado. Inicia sesión primero.')
@@ -362,7 +362,7 @@ function App() {
           <h2>Menu</h2>
           <div className="side-user">{currentUser.username}</div>
           <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Library</button>
-          <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Waitlist</button>
+          <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Wishlist</button>
           <div style={{ marginTop: 'auto' }}>
             <button type="button" className="panel-link" onClick={handleLogout}>Logout</button>
           </div>
@@ -374,7 +374,7 @@ function App() {
           <p className="hero-tag">Game Catalog</p>
           <h2>Encuentra tu proximo juego</h2>
           <p className="hero-copy">
-            Busca por titulo o genero y administra tu coleccion en Library y Waitlist.
+            Busca por titulo o genero y administra tu coleccion en Library y Wishlist.
           </p>
           <form
             className="search-bar"
@@ -425,9 +425,9 @@ function App() {
                   <button
                     type="button"
                     className="secondary-btn"
-                    onClick={() => handleAddToWaitlist(game.id)}
+                    onClick={() => handleAddToWishlist(game.id)}
                   >
-                    Lista de deseado
+                    Lista de deseos
                   </button>
                   <button
                     type="button"

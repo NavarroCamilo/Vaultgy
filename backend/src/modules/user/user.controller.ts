@@ -16,7 +16,7 @@ import {
 import type { Request as ExpressRequest } from 'express';
 
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
-import { WaitlistService } from '../waitlist/waitlist.service';
+import { WishlistService } from '../wishlist/wishlist.service';
 import { LibraryService } from '../library/library.service';
 import { ReviewService } from '../review/review.service';
 import { UserService } from './user.service';
@@ -26,13 +26,14 @@ import { UpdateReviewDto } from '../review/dto/update-review.dto';
 import { CreateMyReviewDto } from './dto/create-my-review.dto';
 import { Roles } from '../../decorators/roles.decorator';
 import { RolesGuard } from '../../guards/roles.guard';
+import { Role } from '@prisma/client';
 
 type AuthenticatedRequest = ExpressRequest & {
 	user?: {
 		id: string;
 		username: string;
 		email: string;
-		role: string;
+		role: Role;
 	};
 };
 
@@ -40,7 +41,7 @@ type AuthenticatedRequest = ExpressRequest & {
 export class UserController {
 	constructor(
 		private readonly userService: UserService,
-		private readonly waitlistService: WaitlistService,
+		private readonly wishlistService: WishlistService,
 		private readonly libraryService: LibraryService,
 		private readonly reviewService: ReviewService,
 	) {}
@@ -115,37 +116,37 @@ export class UserController {
 		return this.userService.changeRole(id, changeRoleDto);
 	}
 
-	@Post('me/waitlist/:gameId')
+	@Post('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
-	addMyGameToWaitlist(
+	addMyGameToWishlist(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
 	) {
-		return this.waitlistService.addToWaitlist(request.user!.id, gameId);
+		return this.wishlistService.addToWishlist(request.user!.id, gameId);
 	}
 
-	@Delete('me/waitlist/:gameId')
+	@Delete('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
-	removeMyGameFromWaitlist(
+	removeMyGameFromWishlist(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
 	) {
-		return this.waitlistService.removeFromWaitlist(request.user!.id, gameId);
+		return this.wishlistService.removeFromWishlist(request.user!.id, gameId);
 	}
 
-	@Get('me/waitlist/:gameId')
+	@Get('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
-	isGameInMyWaitlist(
+	isGameInMyWishlist(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
 	) {
-		return this.waitlistService.isInWaitlist(request.user!.id, gameId);
+		return this.wishlistService.isInWishlist(request.user!.id, gameId);
 	}
 
-	@Get('me/waitlist')
+	@Get('me/wishlist')
 	@UseGuards(JwtAuthGuard)
-	getMyWaitlist(@Req() request: AuthenticatedRequest) {
-		return this.waitlistService.getUserWaitlist(request.user!.id);
+	getMyWishlist(@Req() request: AuthenticatedRequest) {
+		return this.wishlistService.getUserWishlist(request.user!.id);
 	}
 
 	@Post('me/library/:gameId')

@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
 import type { Request } from 'express';
 
 import { PrismaService } from '../modules/prisma/prisma.service';
@@ -14,7 +15,7 @@ type AuthUser = {
   id: string;
   username: string;
   email: string;
-  role: string;
+  role: Role;
 };
 
 @Injectable()

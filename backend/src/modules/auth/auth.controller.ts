@@ -9,6 +9,7 @@ import {
 	Res,
 	UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import type { Request as ExpressRequest, Response } from 'express';
 
 import { AuthService } from './auth.service';
@@ -22,7 +23,7 @@ type AuthenticatedRequest = ExpressRequest & {
 		id: string;
 		username: string;
 		email: string;
-		role: string;
+		role: Role;
 	};
 };
 

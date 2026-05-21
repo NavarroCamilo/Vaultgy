@@ -40,8 +40,8 @@ export class LibraryService {
       throw new ConflictException('Game is already in library');
     }
 
-    // If the game exists in waitlist, remove it
-    await this.prisma.waitlistItem.deleteMany({ where: { userId, gameId } });
+    // If the game exists in wishlist, remove it
+    await this.prisma.wishlistItem.deleteMany({ where: { userId, gameId } });
 
     return this.prisma.libraryItem.create({
       data: {

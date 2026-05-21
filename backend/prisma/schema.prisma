@@ -28,7 +28,7 @@ model User {
 
   reviews   Review[]
   library   LibraryItem[]
-  waitlist  WaitlistItem[]
+  wishlist  WishlistItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -45,7 +45,7 @@ model Game {
 
   reviews     Review[]
   library     LibraryItem[]
-  waitlist    WaitlistItem[]
+  wishlist    WishlistItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -87,8 +87,8 @@ model Review {
   @@index([gameId])
 }
 
-// WAITLIST---------------------------------------------------------------------------
-model WaitlistItem {
+// WISHLIST---------------------------------------------------------------------------
+model WishlistItem {
   id        String   @id @default(uuid())
   userId    String
   gameId    String
@@ -100,4 +100,5 @@ model WaitlistItem {
 
   @@unique([userId, gameId])
   @@index([userId])
+  @@map("WaitlistItem")
 }

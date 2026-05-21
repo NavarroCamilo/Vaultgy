@@ -6,7 +6,7 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, Role, User } from '@prisma/client';
 import { compare, hash } from 'bcryptjs';
 import type { Request } from 'express';
 
@@ -68,7 +68,7 @@ export class AuthService {
 					username: registerDto.username,
 					email: registerDto.email,
 					password: passwordHash,
-					role: 'USER',
+					role: Role.USER,
 				},
 				select: this.publicUserSelect,
 			});
