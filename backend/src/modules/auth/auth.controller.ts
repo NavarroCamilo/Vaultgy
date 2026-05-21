@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import type { Request as ExpressRequest, Response } from 'express';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -59,7 +59,7 @@ export class AuthController {
 
 	@Post('logout')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Logout current user' })
 	@HttpCode(200)
 	logout(@Res({ passthrough: true }) response: Response) {
@@ -74,7 +74,7 @@ export class AuthController {
 
 	@Get('profile')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Get current profile' })
 	getProfile(@Req() request: AuthenticatedRequest) {
 		return this.authService.getProfile(request);
@@ -82,7 +82,7 @@ export class AuthController {
 
 	@Patch('password')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Update current password' })
 	updatePassword(@Req() request: AuthenticatedRequest, @Body() updatePasswordDto: UpdatePasswordDto) {
 		return this.authService.updatePassword(request, updatePasswordDto);

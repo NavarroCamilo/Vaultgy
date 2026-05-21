@@ -25,7 +25,7 @@ import { CreateMyReviewDto } from './dto/create-my-review.dto';
 import { Roles } from '../../decorators/roles.decorator';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Role } from '@prisma/client';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 type AuthenticatedRequest = ExpressRequest & {
 	user?: {
@@ -49,7 +49,7 @@ export class UserController {
 	@Get()
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'List all users' })
 	findAll(@Query('take') take?: string) {
 		const parsedTake = take === undefined ? undefined : Number.parseInt(take, 10);
@@ -61,7 +61,7 @@ export class UserController {
 
 	@Get('search')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Search users by username' })
 	findByUsername(
 		@Query('username') username?: string,
@@ -75,7 +75,7 @@ export class UserController {
 
 	@Get('search/:username')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Search users by username path' })
 	findByUsernamePath(@Param('username') username: string) {
 		return this.userService.findByName(username);
@@ -84,7 +84,7 @@ export class UserController {
 	@Get(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Get a user by id' })
 	findById(@Param('id') id: string) {
 		return this.userService.findById(id);
@@ -93,7 +93,7 @@ export class UserController {
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Update a user by id' })
 	updateUser(
 		@Param('id') id: string,
@@ -104,7 +104,7 @@ export class UserController {
 
 	@Patch('me')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Update my profile' })
 	updateMyProfile(
 		@Req() request: AuthenticatedRequest,
@@ -116,7 +116,7 @@ export class UserController {
 	@Delete(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Delete a user by id' })
 	deleteUser(@Param('id') id: string) {
 		return this.userService.deleteUser(id);
@@ -125,7 +125,7 @@ export class UserController {
 	@Patch(':id/role')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Change a user role' })
 	changeRole(@Param('id') id: string, @Body() changeRoleDto: ChangeRoleDto) {
 		return this.userService.changeRole(id, changeRoleDto);
@@ -133,7 +133,7 @@ export class UserController {
 
 	@Post('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Add a game to my wishlist' })
 	addMyGameToWishlist(
 		@Req() request: AuthenticatedRequest,
@@ -144,7 +144,7 @@ export class UserController {
 
 	@Delete('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Remove a game from my wishlist' })
 	removeMyGameFromWishlist(
 		@Req() request: AuthenticatedRequest,
@@ -155,7 +155,7 @@ export class UserController {
 
 	@Get('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Check if a game is in my wishlist' })
 	isGameInMyWishlist(
 		@Req() request: AuthenticatedRequest,
@@ -166,7 +166,7 @@ export class UserController {
 
 	@Get('me/wishlist')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Get my wishlist' })
 	getMyWishlist(@Req() request: AuthenticatedRequest) {
 		return this.wishlistService.getUserWishlist(request.user!.id);
@@ -174,7 +174,7 @@ export class UserController {
 
 	@Post('me/library/:gameId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Add a game to my library' })
 	addMyGameToLibrary(
 		@Req() request: AuthenticatedRequest,
@@ -185,7 +185,7 @@ export class UserController {
 
 	@Delete('me/library/:gameId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Remove a game from my library' })
 	removeMyGameFromLibrary(
 		@Req() request: AuthenticatedRequest,
@@ -196,7 +196,7 @@ export class UserController {
 
 	@Get('me/library/:gameId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Check if a game is in my library' })
 	isGameInMyLibrary(
 		@Req() request: AuthenticatedRequest,
@@ -207,7 +207,7 @@ export class UserController {
 
 	@Get('me/library')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Get my library' })
 	getMyLibrary(@Req() request: AuthenticatedRequest) {
 		return this.libraryService.getUserLibrary(request.user!.id);
@@ -215,7 +215,7 @@ export class UserController {
 
 	@Post('me/reviews/:gameId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Create my review for a game' })
 	async addMyReview(
 		@Req() request: AuthenticatedRequest,
@@ -233,7 +233,7 @@ export class UserController {
 
 	@Patch('me/reviews/:reviewId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Update my review' })
 	updateMyReview(
 		@Req() request: AuthenticatedRequest,
@@ -245,7 +245,7 @@ export class UserController {
 
 	@Delete('me/reviews/:reviewId')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Delete my review' })
 	deleteMyReview(
 		@Req() request: AuthenticatedRequest,

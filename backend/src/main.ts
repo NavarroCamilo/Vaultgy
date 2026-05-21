@@ -23,7 +23,7 @@ async function bootstrap() {
     .setTitle('Vaultgy API')
     .setDescription('Vaultgy backend API documentation')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addCookieAuth('auth_token')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

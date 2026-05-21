@@ -1,5 +1,4 @@
 import {
-    BadRequestException,
     ConflictException,
     Injectable,
     NotFoundException,
@@ -12,6 +11,17 @@ import { ChangeRoleDto } from './dto/change-role.dto';
 @Injectable()
 export class UserService {
     constructor(private readonly prisma: PrismaService) {}
+
+    private async updateUserRecord(id: string, updateUserDto: UpdateUserDto, select?: Prisma.UserSelect) {
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                username: updateUserDto.username ?? undefined,
+                email: updateUserDto.email ?? undefined,
+            },
+            ...(select ? { select } : {}),
+        });
+    }
 
     async findAll(take?: number) {
         return this.prisma.user.findMany({
@@ -56,13 +66,7 @@ export class UserService {
 
     async updateUser(id: string, updateUserDto: UpdateUserDto) {
         try {
-            return await this.prisma.user.update({
-                where: { id },
-                data: {
-                    username: updateUserDto.username ?? undefined,
-                    email: updateUserDto.email ?? undefined,
-                },
-            });
+            return await this.updateUserRecord(id, updateUserDto);
         } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
                 throw new ConflictException('Username or email already exists');
@@ -74,18 +78,11 @@ export class UserService {
 
     async updateMyProfile(id: string, updateUserDto: UpdateUserDto) {
         try {
-            return await this.prisma.user.update({
-                where: { id },
-                data: {
-                    username: updateUserDto.username ?? undefined,
-                    email: updateUserDto.email ?? undefined,
-                },
-                select: {
-                    id: true,
-                    username: true,
-                    email: true,
-                    role: true,
-                },
+            return await this.updateUserRecord(id, updateUserDto, {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
             });
         } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

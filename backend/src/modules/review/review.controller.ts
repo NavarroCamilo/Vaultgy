@@ -18,7 +18,7 @@ import { ReviewService } from './review.service';
 import { Roles } from '../../decorators/roles.decorator';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('reviews')
 @Controller('reviews')
@@ -28,7 +28,7 @@ export class ReviewController {
 	@Post()
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Create a review (admin)' })
 	create(@Body() createReviewDto: CreateReviewDto) {
 		return this.reviewService.create(createReviewDto);
@@ -75,7 +75,7 @@ export class ReviewController {
 	@Get('user/:userId')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'List reviews for a user (admin)' })
 	findAllByUser(@Param('userId') userId: string) {
 		return this.reviewService.findAllByUser(userId);
@@ -84,7 +84,7 @@ export class ReviewController {
 	@Get(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Get review by id (admin)' })
 	findById(@Param('id') id: string) {
 		return this.reviewService.findById(id);
@@ -93,7 +93,7 @@ export class ReviewController {
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Update review by id (admin)' })
 	update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
 		return this.reviewService.update(id, updateReviewDto);
@@ -102,7 +102,7 @@ export class ReviewController {
 	@Delete(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
-	@ApiBearerAuth()
+	@ApiCookieAuth('auth_token')
 	@ApiOperation({ summary: 'Delete review by id (admin)' })
 	delete(@Param('id') id: string) {
 		return this.reviewService.delete(id);

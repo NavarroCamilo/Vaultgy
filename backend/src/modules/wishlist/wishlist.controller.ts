@@ -1,5 +1,5 @@
 import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { Roles } from '../../decorators/roles.decorator';
@@ -14,7 +14,7 @@ export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) {}
 
   @Post(':userId/game/:gameId')
-  @ApiBearerAuth()
+  @ApiCookieAuth('auth_token')
   @ApiOperation({ summary: 'Add a game to a user wishlist (admin)' })
   addToWishlist(
     @Param('userId') userId: string,
@@ -24,7 +24,7 @@ export class WishlistController {
   }
 
   @Delete(':userId/game/:gameId')
-  @ApiBearerAuth()
+  @ApiCookieAuth('auth_token')
   @ApiOperation({ summary: 'Remove a game from a user wishlist (admin)' })
   removeFromWishlist(
     @Param('userId') userId: string,
@@ -34,7 +34,7 @@ export class WishlistController {
   }
 
   @Get(':userId/game/:gameId')
-  @ApiBearerAuth()
+  @ApiCookieAuth('auth_token')
   @ApiOperation({ summary: 'Check if a game is in a user wishlist (admin)' })
   isInWishlist(
     @Param('userId') userId: string,
@@ -44,7 +44,7 @@ export class WishlistController {
   }
 
   @Get(':userId')
-  @ApiBearerAuth()
+  @ApiCookieAuth('auth_token')
   @ApiOperation({ summary: 'Get a user wishlist (admin)' })
   getUserWishlist(@Param('userId') userId: string) {
     return this.wishlistService.getUserWishlist(userId);

@@ -47,10 +47,12 @@ export class ReviewService {
 		return review;
 	}
 
-	private async ensureReviewBelongsToUser(reviewId: string, userId: string) {
+	private async ensureReviewBelongsToUser(id: string, userId: string) {
 		const review = await this.prisma.review.findFirst({
-			where: { id: reviewId, userId },
-			select: { id: true },
+			where: {
+				id,
+				userId,
+			},
 		});
 
 		if (!review) {
@@ -60,29 +62,37 @@ export class ReviewService {
 		return review;
 	}
 
-	async create(createReviewDto: CreateReviewDto) {
-		await this.ensureUserExists(createReviewDto.userId);
-		await this.ensureGameExists(createReviewDto.gameId);
+	private async createReviewRecord(
+		userId: string,
+		gameId: string,
+		createReviewDto: Pick<CreateReviewDto, 'rating' | 'comment'>,
+	) {
+		await this.ensureUserExists(userId);
+		await this.ensureGameExists(gameId);
 
-		const existing = await this.prisma.review.findFirst({
+		const existingReview = await this.prisma.review.findFirst({
 			where: {
-				userId: createReviewDto.userId,
-				gameId: createReviewDto.gameId,
+				userId,
+				gameId,
 			},
 		});
 
-		if (existing) {
+		if (existingReview) {
 			throw new ConflictException('Review already exists for this user and game');
 		}
 
 		return this.prisma.review.create({
 			data: {
 				rating: createReviewDto.rating,
-				comment: createReviewDto.comment ?? null,
-				userId: createReviewDto.userId,
-				gameId: createReviewDto.gameId,
+				comment: createReviewDto.comment ?? undefined,
+				userId,
+				gameId,
 			},
 		});
+	}
+
+	async create(createReviewDto: CreateReviewDto) {
+		return this.createReviewRecord(createReviewDto.userId, createReviewDto.gameId, createReviewDto);
 	}
 
 	async createForUser(
@@ -90,28 +100,7 @@ export class ReviewService {
 		gameId: string,
 		createReviewDto: Omit<CreateReviewDto, 'userId' | 'gameId'>,
 	) {
-		await this.ensureUserExists(userId);
-		await this.ensureGameExists(gameId);
-
-		const existing = await this.prisma.review.findFirst({
-			where: {
-				userId,
-				gameId,
-			},
-		});
-
-		if (existing) {
-			throw new ConflictException('Review already exists for this user and game');
-		}
-
-		return this.prisma.review.create({
-			data: {
-				rating: createReviewDto.rating,
-				comment: createReviewDto.comment ?? null,
-				userId,
-				gameId,
-			},
-		});
+		return this.createReviewRecord(userId, gameId, createReviewDto);
 	}
 
 	async findById(id: string) {
@@ -143,6 +132,10 @@ export class ReviewService {
 
 		if (page < 1) {
 			throw new BadRequestException('Page must be >= 1');
+		}
+
+		if (pageSize < 1) {
+			throw new BadRequestException('Page size must be >= 1');
 		}
 
 		const skip = (page - 1) * pageSize;

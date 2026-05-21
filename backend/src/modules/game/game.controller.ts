@@ -13,12 +13,11 @@ import {
 
 import { UseGuards } from '@nestjs/common';
 import {
-  ApiBearerAuth,
+  ApiCookieAuth,
   ApiOperation,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
@@ -85,7 +84,7 @@ export class GameController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  @ApiBearerAuth()
+  @ApiCookieAuth('auth_token')
   @ApiOperation({ summary: 'Create a game' })
   create(@Body() createGameDto: CreateGameDto) {
     return this.gameService.create(createGameDto);
@@ -94,7 +93,7 @@ export class GameController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  @ApiBearerAuth()
+  @ApiCookieAuth('auth_token')
   @ApiOperation({ summary: 'Update a game' })
   update(
     @Param('id') id: string,
@@ -106,7 +105,7 @@ export class GameController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  @ApiBearerAuth()
+  @ApiCookieAuth('auth_token')
   @ApiOperation({ summary: 'Delete a game' })
   delete(@Param('id') id: string) {
     return this.gameService.delete(id);
