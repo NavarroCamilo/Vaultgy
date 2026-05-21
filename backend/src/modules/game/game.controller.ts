@@ -37,13 +37,11 @@ export class GameController {
   }
 
   @Get('search')
-  findByTitle(@Query('title') title: string) {
-    return this.gameService.findByTitle(title);
-  }
-
-  @Get('search/:title')
-  findByTitlePath(@Param('title') title: string) {
-    return this.gameService.findByTitle(title);
+  search(
+    @Query('column') column: string,
+    @Query('value') value: string,
+  ) {
+    return this.gameService.searchByColumn(column, value);
   }
 
   @Get(':id')

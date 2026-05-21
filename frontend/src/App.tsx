@@ -1,121 +1,148 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useMemo, useState } from 'react'
+import { api } from './api/http'
 import './App.css'
 
+type Game = {
+  id: string
+  title: string
+  description?: string | null
+  coverImage?: string | null
+  genre?: string | null
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [games, setGames] = useState<Game[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [searchDraft, setSearchDraft] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const loadGames = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const response = await api.get<Game[]>('/games')
+        setGames(response.data)
+      } catch {
+        setError('No se pudieron cargar los juegos. Revisa que el backend esté corriendo.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadGames()
+  }, [])
+
+  const filteredGames = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return games
+    }
+
+    return games.filter((game) => {
+      const byTitle = game.title.toLowerCase().includes(normalizedQuery)
+      const byGenre = (game.genre ?? '').toLowerCase().includes(normalizedQuery)
+
+      return byTitle || byGenre
+    })
+  }, [games, searchQuery])
+
+  const runSearch = () => {
+    setSearchQuery(searchDraft)
+  }
+
+  const handleLogin = async () => {
+    try {
+      await api.get('/auth/profile')
+      alert('Sesion activa')
+    } catch {
+      alert('Conecta luego el login real a /auth/login')
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="brand-group">
+          <button
+            type="button"
+            className="menu-trigger"
+            onClick={() => setMenuOpen((previous) => !previous)}
+            aria-label="Open side menu"
+          >
+            ☰
+          </button>
+          <h1 className="brand">VAULTGY</h1>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+        <div className="auth-actions">
+          <button type="button" className="ghost-btn" onClick={handleLogin}>Login</button>
+          <button type="button" className="solid-btn">Register</button>
+        </div>
+      </header>
+
+      <aside className={`sidepanel ${menuOpen ? 'open' : ''}`}>
+        <h2>Menu</h2>
+        <button type="button" className="panel-link">Library</button>
+        <button type="button" className="panel-link">Waitlist</button>
+      </aside>
+
+      <main className="content">
+        <section className="hero-banner">
+          <p className="hero-tag">Game Catalog</p>
+          <h2>Encuentra tu proximo juego</h2>
+          <p className="hero-copy">
+            Busca por titulo o genero y administra tu coleccion en Library y Waitlist.
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+          <form
+            className="search-bar"
+            onSubmit={(event) => {
+              event.preventDefault()
+              runSearch()
+            }}
+          >
+            <input
+              className="search-input"
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
+              placeholder="Buscar juegos..."
+            />
+            <button type="submit" className="search-button">
+              Buscar
+            </button>
+          </form>
+        </section>
 
-      <div className="ticks"></div>
+        <section className="games-grid" aria-live="polite">
+          {loading && <p className="status">Cargando juegos...</p>}
+          {!loading && error && <p className="status error">{error}</p>}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          {!loading && !error && filteredGames.length === 0 && (
+            <p className="status">No hay juegos que coincidan con tu busqueda.</p>
+          )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          {!loading && !error && filteredGames.map((game) => (
+            <article className="game-card" key={game.id}>
+              <img
+                src={game.coverImage || 'https://placehold.co/600x350/1f2937/e5e7eb?text=Vaultgy'}
+                alt={game.title}
+                loading="lazy"
+              />
+              <div className="game-meta">
+                <div className="game-top">
+                  <h3>{game.title}</h3>
+                  <span>{game.genre ?? 'Unknown'}</span>
+                </div>
+                <p>{game.description ?? 'Sin descripcion disponible.'}</p>
+              </div>
+            </article>
+          ))}
+        </section>
+      </main>
+    </div>
   )
 }
 

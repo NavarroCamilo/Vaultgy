@@ -11,6 +11,8 @@ import { UpdateGameDto } from './dto/update-game.dto';
 export class GameService {
     constructor(private readonly prisma: PrismaService) { }
 
+    private readonly searchableColumns = new Set(['title', 'genre']);
+
     private parseDate(date?: string): Date | undefined {
         if (!date) return undefined;
 
@@ -72,11 +74,17 @@ export class GameService {
         return game;
     }
 
-    async findByTitle(title: string) {
+    async searchByColumn(column: string, value: string) {
+        const normalizedColumn = column.trim().toLowerCase();
+
+        if (!this.searchableColumns.has(normalizedColumn)) {
+            throw new BadRequestException('Search column must be title or genre');
+        }
+
         const games = await this.prisma.game.findMany({
             where: {
-                title: {
-                    contains: title,
+                [normalizedColumn]: {
+                    contains: value,
                     mode: 'insensitive',
                 },
             },
@@ -86,7 +94,7 @@ export class GameService {
         });
 
         if (!games.length) {
-            throw new NotFoundException('No games found with that title');
+            throw new NotFoundException('No games found');
         }
 
         return games;
