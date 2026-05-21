@@ -10,6 +10,13 @@ type Game = {
   genre?: string | null
 }
 
+type User = {
+  id: string
+  username: string
+  email: string
+  role: string
+}
+
 function App() {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
@@ -17,11 +24,26 @@ function App() {
   const [searchDraft, setSearchDraft] = useState('')
   const [searchColumn, setSearchColumn] = useState<'title' | 'genre'>('title')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+
+  const [registerUsername, setRegisterUsername] = useState('')
+  const [registerEmail, setRegisterEmail] = useState('')
+  const [registerPassword, setRegisterPassword] = useState('')
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMenuOpen(false)
+        setAuthOpen(false)
       }
     }
 
@@ -56,6 +78,20 @@ function App() {
     }
 
     void loadGames()
+  }, [])
+
+  // try to fetch profile on mount to detect existing session
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await api.get<User>('/auth/profile')
+        setCurrentUser(res.data)
+      } catch {
+        setCurrentUser(null)
+      }
+    }
+
+    void loadProfile()
   }, [])
 
   const filteredGames = games
@@ -109,12 +145,57 @@ function App() {
     }
   }
 
-  const handleLogin = async () => {
+  
+
+  const handleSubmitLogin = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    setAuthError(null)
+    setAuthLoading(true)
     try {
-      await api.get('/auth/profile')
-      alert('Sesion activa')
+      const res = await api.post<User>('/auth/login', { email: loginEmail, password: loginPassword })
+      // backend returns the user and sets auth cookie
+      setCurrentUser(res.data)
+      setAuthOpen(false)
+      setMenuOpen(false)
+      setLoginEmail('')
+      setLoginPassword('')
+      alert('Inicio de sesión exitoso')
+    } catch (err) {
+      setAuthError('No se pudo iniciar sesión. Revisa credenciales.')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const handleSubmitRegister = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    setAuthError(null)
+    setAuthLoading(true)
+    try {
+      await api.post<User>('/auth/register', { username: registerUsername, email: registerEmail, password: registerPassword })
+      // after register, we can opt to set user or ask to login; keep current behavior: prompt to login
+      setAuthOpen(false)
+      setRegisterUsername('')
+      setRegisterEmail('')
+      setRegisterPassword('')
+      alert('Registro exitoso — ahora inicia sesión')
+    } catch (err) {
+      setAuthError('No se pudo registrar. Revisa los datos.')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout')
     } catch {
-      alert('Conecta luego el login real a /auth/login')
+      // ignore errors
+    } finally {
+      setCurrentUser(null)
+      setMenuOpen(false)
+      setAuthOpen(false)
+      alert('Sesión cerrada')
     }
   }
 
@@ -140,23 +221,43 @@ function App() {
     <div className="app-shell">
       <header className="topbar">
         <div className="brand-group">
-          <button
-            type="button"
-            className="menu-trigger"
-            onClick={() => setMenuOpen((previous) => !previous)}
-            aria-label={menuOpen ? 'Cerrar menu lateral' : 'Abrir menu lateral'}
-            aria-expanded={menuOpen}
-            aria-controls="sidepanel-drawer"
-          >
-            ☰
-          </button>
+            {currentUser && (
+              <button
+                type="button"
+                className="menu-trigger"
+                onClick={() => setMenuOpen((previous) => !previous)}
+                aria-label={menuOpen ? 'Cerrar menu lateral' : 'Abrir menu lateral'}
+                aria-expanded={menuOpen}
+                aria-controls="sidepanel-drawer"
+              >
+                ☰
+              </button>
+            )}
           <button type="button" className="brand-button" onClick={handleBrandClick}>
             <h1 className="brand">VAULTGY</h1>
           </button>
         </div>
-        <div className="auth-actions">
-          <button type="button" className="ghost-btn" onClick={handleLogin}>Login</button>
-          <button type="button" className="solid-btn">Register</button>
+        <div className="auth-actions auth-top-tabs">
+          {!currentUser ? (
+            <>
+              <button
+                type="button"
+                className={`tab ${authMode === 'login' ? 'active' : ''}`}
+                onClick={() => { setAuthMode('login'); setAuthOpen(true) }}
+              >
+                Log in
+              </button>
+              <button
+                type="button"
+                className={`tab ${authMode === 'register' ? 'active' : ''}`}
+                onClick={() => { setAuthMode('register'); setAuthOpen(true) }}
+              >
+                Sign up
+              </button>
+            </>
+          ) : (
+            <div className="logged-info">Hola, {currentUser.username}</div>
+          )}
         </div>
       </header>
 
@@ -167,11 +268,62 @@ function App() {
         onClick={() => setMenuOpen(false)}
       />
 
-      <aside id="sidepanel-drawer" className={`sidepanel ${menuOpen ? 'open' : ''}`}>
-        <h2>Menu</h2>
-        <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Library</button>
-        <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Waitlist</button>
-      </aside>
+      {/* Auth popover anchored to top-right under auth buttons */}
+      <div className={`auth-popover ${authOpen ? 'open' : ''}`} role="dialog" aria-hidden={!authOpen}>
+        <div className="auth-body">
+          {authError && <div className="auth-error">{authError}</div>}
+
+          {authMode === 'login' && (
+            <form onSubmit={handleSubmitLogin} className="auth-form">
+              <label className="field">
+                <span>Email</span>
+                <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+              </label>
+              <label className="field">
+                <span>Password</span>
+                <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} minLength={6} required />
+              </label>
+              <div className="auth-actions-row">
+                <button type="submit" className="primary-btn" disabled={authLoading}>{authLoading ? 'Entrando...' : 'Entrar'}</button>
+                <button type="button" className="ghost-btn" onClick={() => setAuthOpen(false)}>Cancelar</button>
+              </div>
+            </form>
+          )}
+
+          {authMode === 'register' && (
+            <form onSubmit={handleSubmitRegister} className="auth-form">
+              <label className="field">
+                <span>Username</span>
+                <input type="text" value={registerUsername} onChange={(e) => setRegisterUsername(e.target.value)} required />
+              </label>
+              <label className="field">
+                <span>Email</span>
+                <input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} required />
+              </label>
+              <label className="field">
+                <span>Password</span>
+                <input type="password" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} minLength={6} required />
+              </label>
+              <div className="auth-actions-row">
+                <button type="submit" className="primary-btn" disabled={authLoading}>{authLoading ? 'Registrando...' : 'Crear cuenta'}</button>
+                <button type="button" className="ghost-btn" onClick={() => setAuthOpen(false)}>Cancelar</button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {currentUser && (
+        <aside id="sidepanel-drawer" className={`sidepanel ${menuOpen ? 'open' : ''}`}>
+          <h2>Menu</h2>
+          <div className="side-user">{currentUser.username}</div>
+          <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Library</button>
+          <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Waitlist</button>
+          <div style={{ marginTop: 'auto' }}>
+            <button type="button" className="panel-link" onClick={handleLogout}>Logout</button>
+          </div>
+        </aside>
+      )}
 
       <main className="content">
         <section className="hero-banner">

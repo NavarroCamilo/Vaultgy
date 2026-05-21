@@ -368,3 +368,120 @@
     padding-inline: 1.5rem;
   }
 }
+
+/* Auth popover (top-right) */
+.auth-popover {
+  position: fixed;
+  top: 76px; /* below topbar */
+  right: 1rem;
+  width: 360px;
+  max-width: calc(100% - 2rem);
+  z-index: 60;
+  background: rgba(3,8,18,0.92);
+  border: 1px solid rgba(148,163,184,0.12);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+  transform-origin: top right;
+  transform: translateY(-8px) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+  overflow: hidden;
+}
+
+.auth-popover.open {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Topbar tabs (compact) */
+.auth-top-tabs {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.auth-top-tabs .tab {
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px;
+  font-weight: 800;
+  background: transparent;
+  color: #dbe2f1;
+  border: 1px solid rgba(148,163,184,0.12);
+}
+
+.auth-top-tabs .tab.active {
+  background: linear-gradient(135deg,#22d3ee,#60a5fa);
+  color: #07243f;
+  border-color: transparent;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(15,23,42,0.6);
+}
+
+.auth-tabs .tab {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  color: #cbd5e1;
+  background: transparent;
+  border: 1px solid transparent;
+  font-weight: 700;
+}
+
+.auth-tabs .tab.active {
+  background: linear-gradient(135deg,#22d3ee,#60a5fa);
+  color: #07243f;
+}
+
+.auth-body {
+  padding: 0.75rem 1rem 1rem 1rem;
+}
+
+.auth-error {
+  color: #fecaca;
+  background: rgba(248,113,113,0.06);
+  border: 1px solid rgba(248,113,113,0.12);
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.auth-form .field span {
+  display: block;
+  font-size: 0.85rem;
+  color: #9fb4d8;
+  margin-bottom: 0.25rem;
+}
+
+.auth-form .field input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148,163,184,0.15);
+  background: rgba(8,47,73,0.45);
+  color: #e2e8f0;
+}
+
+.auth-actions-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 600px) {
+  .auth-popover { right: 0.5rem; width: calc(100% - 1rem); }
+}
