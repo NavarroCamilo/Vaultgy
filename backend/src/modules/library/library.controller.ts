@@ -1,4 +1,5 @@
 import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { LibraryService } from './library.service';
 import { Roles } from '../../decorators/roles.decorator';
@@ -8,10 +9,13 @@ import { RolesGuard } from '../../guards/roles.guard';
 @Controller('library')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
+@ApiTags('library')
 export class LibraryController {
   constructor(private readonly libraryService: LibraryService) {}
 
   @Post(':userId/game/:gameId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add a game to a user library (admin)' })
   addToLibrary(
     @Param('userId') userId: string,
     @Param('gameId') gameId: string,
@@ -20,6 +24,8 @@ export class LibraryController {
   }
 
   @Delete(':userId/game/:gameId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove a game from a user library (admin)' })
   removeFromLibrary(
     @Param('userId') userId: string,
     @Param('gameId') gameId: string,
@@ -28,6 +34,8 @@ export class LibraryController {
   }
 
   @Get(':userId/game/:gameId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check if a game is in a user library (admin)' })
   isInLibrary(
     @Param('userId') userId: string,
     @Param('gameId') gameId: string,
@@ -36,6 +44,8 @@ export class LibraryController {
   }
 
   @Get(':userId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a user library (admin)' })
   getUserLibrary(@Param('userId') userId: string) {
     return this.libraryService.getUserLibrary(userId);
   }

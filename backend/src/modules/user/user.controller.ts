@@ -8,8 +8,6 @@ import {
 	Patch,
 	Post,
 	Query,
-	DefaultValuePipe,
-	ParseIntPipe,
 	Req,
 	UseGuards,
 } from '@nestjs/common';
@@ -27,6 +25,7 @@ import { CreateMyReviewDto } from './dto/create-my-review.dto';
 import { Roles } from '../../decorators/roles.decorator';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Role } from '@prisma/client';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 type AuthenticatedRequest = ExpressRequest & {
 	user?: {
@@ -38,6 +37,7 @@ type AuthenticatedRequest = ExpressRequest & {
 };
 
 @Controller('users')
+@ApiTags('users')
 export class UserController {
 	constructor(
 		private readonly userService: UserService,
@@ -49,6 +49,8 @@ export class UserController {
 	@Get()
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'List all users' })
 	findAll(@Query('take') take?: string) {
 		const parsedTake = take === undefined ? undefined : Number.parseInt(take, 10);
 
@@ -57,18 +59,10 @@ export class UserController {
 		);
 	}
 
-	@Get('paged')
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles('ADMIN')
-	findAllPaged(
-		@Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-		@Query('pageSize', new DefaultValuePipe(10), ParseIntPipe) pageSize: number,
-	) {
-		return this.userService.findAllPaged(page, pageSize);
-	}
-
 	@Get('search')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Search users by username' })
 	findByUsername(
 		@Query('username') username?: string,
 	) {
@@ -81,6 +75,8 @@ export class UserController {
 
 	@Get('search/:username')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Search users by username path' })
 	findByUsernamePath(@Param('username') username: string) {
 		return this.userService.findByName(username);
 	}
@@ -88,6 +84,8 @@ export class UserController {
 	@Get(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Get a user by id' })
 	findById(@Param('id') id: string) {
 		return this.userService.findById(id);
 	}
@@ -95,6 +93,8 @@ export class UserController {
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Update a user by id' })
 	updateUser(
 		@Param('id') id: string,
 		@Body() updateUserDto: UpdateUserDto,
@@ -104,6 +104,8 @@ export class UserController {
 
 	@Patch('me')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Update my profile' })
 	updateMyProfile(
 		@Req() request: AuthenticatedRequest,
 		@Body() updateUserDto: UpdateUserDto,
@@ -114,6 +116,8 @@ export class UserController {
 	@Delete(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Delete a user by id' })
 	deleteUser(@Param('id') id: string) {
 		return this.userService.deleteUser(id);
 	}
@@ -121,12 +125,16 @@ export class UserController {
 	@Patch(':id/role')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Change a user role' })
 	changeRole(@Param('id') id: string, @Body() changeRoleDto: ChangeRoleDto) {
 		return this.userService.changeRole(id, changeRoleDto);
 	}
 
 	@Post('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Add a game to my wishlist' })
 	addMyGameToWishlist(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
@@ -136,6 +144,8 @@ export class UserController {
 
 	@Delete('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Remove a game from my wishlist' })
 	removeMyGameFromWishlist(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
@@ -145,6 +155,8 @@ export class UserController {
 
 	@Get('me/wishlist/:gameId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Check if a game is in my wishlist' })
 	isGameInMyWishlist(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
@@ -154,12 +166,16 @@ export class UserController {
 
 	@Get('me/wishlist')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Get my wishlist' })
 	getMyWishlist(@Req() request: AuthenticatedRequest) {
 		return this.wishlistService.getUserWishlist(request.user!.id);
 	}
 
 	@Post('me/library/:gameId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Add a game to my library' })
 	addMyGameToLibrary(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
@@ -169,6 +185,8 @@ export class UserController {
 
 	@Delete('me/library/:gameId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Remove a game from my library' })
 	removeMyGameFromLibrary(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
@@ -178,6 +196,8 @@ export class UserController {
 
 	@Get('me/library/:gameId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Check if a game is in my library' })
 	isGameInMyLibrary(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
@@ -187,12 +207,16 @@ export class UserController {
 
 	@Get('me/library')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Get my library' })
 	getMyLibrary(@Req() request: AuthenticatedRequest) {
 		return this.libraryService.getUserLibrary(request.user!.id);
 	}
 
 	@Post('me/reviews/:gameId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Create my review for a game' })
 	async addMyReview(
 		@Req() request: AuthenticatedRequest,
 		@Param('gameId') gameId: string,
@@ -209,6 +233,8 @@ export class UserController {
 
 	@Patch('me/reviews/:reviewId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Update my review' })
 	updateMyReview(
 		@Req() request: AuthenticatedRequest,
 		@Param('reviewId') reviewId: string,
@@ -219,6 +245,8 @@ export class UserController {
 
 	@Delete('me/reviews/:reviewId')
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Delete my review' })
 	deleteMyReview(
 		@Req() request: AuthenticatedRequest,
 		@Param('reviewId') reviewId: string,

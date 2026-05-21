@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../api/http'
 import type { Game } from '../types/domain'
 
@@ -11,6 +11,16 @@ type CatalogPageProps = {
   onRemoveFromLibrary: (gameId: string) => Promise<void>
   onAddToWishlist: (gameId: string) => Promise<void>
   onRemoveFromWishlist: (gameId: string) => Promise<void>
+}
+
+type PagedGamesResponse = {
+  data: Game[]
+  meta: {
+    total: number
+    page: number
+    pageSize: number
+    totalPages: number
+  }
 }
 
 function CatalogPage({
@@ -27,79 +37,62 @@ function CatalogPage({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchDraft, setSearchDraft] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [searchColumn, setSearchColumn] = useState<'title' | 'genre'>('title')
-  const mountedRef = useRef(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
 
-  useEffect(() => {
-    const loadGames = async () => {
-      setLoading(true)
-      setError('')
-
-      try {
-        const response = await api.get<Game[]>('/games')
-        setGames(response.data)
-      } catch {
-        setError('No se pudieron cargar los juegos. Revisa que el backend esté corriendo.')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void loadGames()
-  }, [])
-
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true
-      return
-    }
-
-    setSearchDraft('')
-    setSearchColumn('title')
-    void loadAllGames()
-  }, [resetSignal])
-
-  const loadAllGames = async () => {
+  const loadCatalog = async () => {
     setLoading(true)
     setError('')
 
     try {
-      const response = await api.get<Game[]>('/games')
-      setGames(response.data)
+      const endpoint = searchQuery
+        ? '/games/search/paged'
+        : '/games/paged'
+
+      const response = searchQuery
+        ? await api.get<PagedGamesResponse>(endpoint, {
+            params: {
+              column: searchColumn,
+              value: searchQuery,
+              page,
+              pageSize,
+            },
+          })
+        : await api.get<PagedGamesResponse>(endpoint, {
+            params: {
+              page,
+              pageSize,
+            },
+          })
+
+      setGames(response.data.data)
+      setTotalItems(response.data.meta.total)
+      setTotalPages(response.data.meta.totalPages)
     } catch {
-      setError('No se pudieron cargar los juegos. Revisa que el backend esté corriendo.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const runSearch = async () => {
-    const normalizedQuery = searchDraft.trim()
-
-    if (!normalizedQuery) {
-      void loadAllGames()
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const response = await api.get<Game[]>('/games/search', {
-        params: {
-          column: searchColumn,
-          value: normalizedQuery,
-        },
-      })
-
-      setGames(response.data)
-    } catch {
-      setError('No se pudieron encontrar juegos con ese filtro.')
       setGames([])
+      setTotalItems(0)
+      setTotalPages(1)
+      setError(searchQuery ? '' : 'Could not load games. Please check that the backend is running.')
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    void loadCatalog()
+  }, [searchQuery, searchColumn, page, pageSize])
+
+  useEffect(() => {
+    setSearchDraft('')
+    setSearchQuery('')
+    setSearchColumn('title')
+    setPage(1)
+    setPageSize(10)
+  }, [resetSignal])
 
   const openGameCard = (gameId: string) => {
     onOpenGame(gameId)
@@ -117,7 +110,8 @@ function CatalogPage({
           className="search-bar"
           onSubmit={(event) => {
             event.preventDefault()
-            runSearch()
+            setPage(1)
+            setSearchQuery(searchDraft.trim())
           }}
         >
           <input
@@ -133,6 +127,18 @@ function CatalogPage({
           >
             <option value="title">Title</option>
             <option value="genre">Genre</option>
+          </select>
+          <select
+            className="search-select"
+            value={pageSize}
+            onChange={(event) => {
+              setPage(1)
+              setPageSize(Number(event.target.value))
+            }}
+          >
+            <option value={10}>10 per page</option>
+            <option value={25}>25 per page</option>
+            <option value={50}>50 per page</option>
           </select>
           <button type="submit" className="search-button">
             Search
@@ -230,6 +236,30 @@ function CatalogPage({
             </article>
           )
         })}
+
+        {!loading && !error && totalPages > 1 && (
+          <div className="pagination-bar">
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1}
+            >
+              Previous
+            </button>
+            <span className="pagination-meta">
+              Page {page} of {totalPages} · {totalItems} games
+            </span>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={page >= totalPages}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </section>
     </>
   )

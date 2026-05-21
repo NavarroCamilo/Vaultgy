@@ -100,6 +100,53 @@ export class GameService {
         return games;
     }
 
+    async searchPagedByColumn(column: string, value: string, page = 1, pageSize = 10) {
+        const normalizedColumn = column.trim().toLowerCase();
+
+        if (!this.searchableColumns.has(normalizedColumn)) {
+            throw new BadRequestException('Search column must be title or genre');
+        }
+
+        if (page < 1) {
+            throw new BadRequestException('Page must be >= 1');
+        }
+
+        const where = {
+            [normalizedColumn]: {
+                contains: value,
+                mode: 'insensitive' as const,
+            },
+        };
+
+        const skip = (page - 1) * pageSize;
+
+        const [games, total] = await this.prisma.$transaction([
+            this.prisma.game.findMany({
+                where,
+                skip,
+                take: pageSize,
+                orderBy: {
+                    createdAt: 'desc',
+                },
+            }),
+            this.prisma.game.count({ where }),
+        ]);
+
+        if (!games.length) {
+            throw new NotFoundException('No games found');
+        }
+
+        return {
+            data: games,
+            meta: {
+                total,
+                page,
+                pageSize,
+                totalPages: Math.ceil(total / pageSize),
+            },
+        };
+    }
+
     async create(createGameDto: CreateGameDto) {
         return this.prisma.game.create({
             data: {

@@ -22,34 +22,6 @@ export class UserService {
         });
     }
 
-    async findAllPaged(page = 1, pageSize = 10) {
-        if (page < 1) {
-            throw new BadRequestException('Page must be >= 1');
-        }
-
-        const skip = (page - 1) * pageSize;
-        const [users, total] = await this.prisma.$transaction([
-            this.prisma.user.findMany({
-                skip,
-                take: pageSize,
-                orderBy: {
-                    createdAt: 'desc',
-                },
-            }),
-            this.prisma.user.count(),
-        ]);
-
-        return {
-            data: users,
-            meta: {
-                total,
-                page,
-                pageSize,
-                totalPages: Math.ceil(total / pageSize),
-            },
-        };
-    }
-
     async findById(id: string) {
         const user = await this.prisma.user.findUnique({
             where: { id },
