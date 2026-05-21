@@ -497,6 +497,7 @@ function AppShell() {
         ) : activeView === 'details' && selectedGameId ? (
           <GameDetailsPage
             gameId={selectedGameId}
+            currentUsername={currentUser?.username}
             libraryGameIds={libraryGameIds}
             wishlistGameIds={wishlistGameIds}
             onBack={() => {
