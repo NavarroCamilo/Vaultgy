@@ -2,23 +2,21 @@ import { useEffect, useState } from 'react'
 import { api } from '../api/http'
 import type { Game } from '../types/domain'
 
-type WishlistPageProps = {
-  wishlistGameIds: string[]
+type LibraryPageProps = {
   libraryGameIds: string[]
+  wishlistGameIds: string[]
   onOpenGame: (gameId: string) => void
-  onAddToLibrary: (gameId: string) => Promise<void>
   onRemoveFromLibrary: (gameId: string) => Promise<void>
-  onRemoveFromWishlist: (gameId: string) => Promise<void>
+  onAddToWishlist: (gameId: string) => Promise<void>
 }
 
-function WishlistPage({
-  wishlistGameIds,
+function LibraryPage({
   libraryGameIds,
+  wishlistGameIds,
   onOpenGame,
-  onAddToLibrary,
   onRemoveFromLibrary,
-  onRemoveFromWishlist,
-}: WishlistPageProps) {
+  onAddToWishlist,
+}: LibraryPageProps) {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -32,7 +30,7 @@ function WishlistPage({
         const response = await api.get<Game[]>('/games')
         setGames(response.data)
       } catch {
-        setError('No se pudo cargar tu lista de deseos.')
+        setError('No se pudo cargar la biblioteca.')
       } finally {
         setLoading(false)
       }
@@ -41,7 +39,7 @@ function WishlistPage({
     void loadGames()
   }, [])
 
-  const wishlistGames = games.filter((game) => wishlistGameIds.includes(game.id))
+  const libraryGames = games.filter((game) => libraryGameIds.includes(game.id))
 
   const openGameCard = (gameId: string) => {
     onOpenGame(gameId)
@@ -50,23 +48,20 @@ function WishlistPage({
   return (
     <>
       <section className="hero-banner">
-        <p className="hero-tag">Wishlist</p>
-        <h2>Your Wishlist</h2>
-        <p className="hero-copy">
-          Here are the games you've saved for later.
-        </p>
+        <p className="hero-tag">Library</p>
+        <h2>Your Library</h2>
+        <p className="hero-copy">Games in your collection.</p>
       </section>
 
       <section className="games-grid" aria-live="polite">
-        {loading && <p className="status">Loading your wishlist...</p>}
+        {loading && <p className="status">Loading library...</p>}
         {!loading && error && <p className="status error">{error}</p>}
 
-        {!loading && !error && wishlistGames.length === 0 && (
-          <p className="status">You don't have any games in your wishlist yet.</p>
+        {!loading && !error && libraryGames.length === 0 && (
+          <p className="status">Your library is empty.</p>
         )}
 
-        {!loading && !error && wishlistGames.map((game) => {
-          const inLibrary = libraryGameIds.includes(game.id)
+        {!loading && !error && libraryGames.map((game) => {
 
           return (
             <article
@@ -92,39 +87,15 @@ function WishlistPage({
                 <h3>{game.title}</h3>
                 <p className="game-genre">{game.genre ?? 'Unknown genre'}</p>
                 <div className="game-actions">
-                  {inLibrary ? (
-                    <button
-                      type="button"
-                      className="primary-btn"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        void onRemoveFromLibrary(game.id)
-                      }}
-                    >
-                      Remove from Library
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="primary-btn"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        void onAddToLibrary(game.id)
-                      }}
-                    >
-                      Add to Library
-                    </button>
-                  )}
-
                   <button
                     type="button"
                     className="secondary-btn"
                     onClick={(event) => {
                       event.stopPropagation()
-                      void onRemoveFromWishlist(game.id)
+                      void onRemoveFromLibrary(game.id)
                     }}
                   >
-                    Remove from Wishlist
+                    Remove from Library
                   </button>
                 </div>
               </div>
@@ -136,4 +107,4 @@ function WishlistPage({
   )
 }
 
-export default WishlistPage
+export default LibraryPage

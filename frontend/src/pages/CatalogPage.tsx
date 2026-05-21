@@ -8,6 +8,7 @@ type CatalogPageProps = {
   wishlistGameIds: string[]
   onOpenGame: (gameId: string) => void
   onAddToLibrary: (gameId: string) => Promise<void>
+  onRemoveFromLibrary: (gameId: string) => Promise<void>
   onAddToWishlist: (gameId: string) => Promise<void>
   onRemoveFromWishlist: (gameId: string) => Promise<void>
 }
@@ -18,6 +19,7 @@ function CatalogPage({
   wishlistGameIds,
   onOpenGame,
   onAddToLibrary,
+  onRemoveFromLibrary,
   onAddToWishlist,
   onRemoveFromWishlist,
 }: CatalogPageProps) {
@@ -107,9 +109,9 @@ function CatalogPage({
     <>
       <section className="hero-banner">
         <p className="hero-tag">Game Catalog</p>
-        <h2>Encuentra tu proximo juego</h2>
+        <h2>Find your next game</h2>
         <p className="hero-copy">
-          Busca por titulo o genero y administra tu coleccion en Library y Wishlist.
+          Search by title or genre and manage your collection in Library and Wishlist.
         </p>
         <form
           className="search-bar"
@@ -122,7 +124,7 @@ function CatalogPage({
             className="search-input"
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
-            placeholder="Buscar juegos..."
+            placeholder="Search games..."
           />
           <select
             className="search-select"
@@ -133,17 +135,17 @@ function CatalogPage({
             <option value="genre">Genre</option>
           </select>
           <button type="submit" className="search-button">
-            Buscar
+            Search
           </button>
         </form>
       </section>
 
       <section className="games-grid" aria-live="polite">
-        {loading && <p className="status">Cargando juegos...</p>}
+        {loading && <p className="status">Loading games...</p>}
         {!loading && error && <p className="status error">{error}</p>}
 
         {!loading && !error && games.length === 0 && (
-          <p className="status">No hay juegos que coincidan con tu busqueda.</p>
+          <p className="status">No games match your search.</p>
         )}
 
         {!loading && !error && games.map((game) => {
@@ -175,41 +177,54 @@ function CatalogPage({
                 <p className="game-genre">{game.genre ?? 'Unknown genre'}</p>
                 <div className="game-actions">
                   {!inLibrary && !inWishlist && (
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        void onAddToWishlist(game.id)
-                      }}
-                    >
-                      Lista de deseados
-                    </button>
-                  )}
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          void onAddToWishlist(game.id)
+                        }}
+                      >
+                        Add to Wishlist
+                      </button>
+                    )}
 
                   {!inLibrary && inWishlist && (
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          void onRemoveFromWishlist(game.id)
+                        }}
+                      >
+                        Remove from Wishlist
+                      </button>
+                    )}
+
+                  {inLibrary ? (
                     <button
                       type="button"
-                      className="secondary-btn"
+                      className="primary-btn"
                       onClick={(event) => {
                         event.stopPropagation()
-                        void onRemoveFromWishlist(game.id)
+                        void onRemoveFromLibrary(game.id)
                       }}
                     >
-                      Eliminar de deseados
+                      Remove from Library
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void onAddToLibrary(game.id)
+                      }}
+                    >
+                      Add to Library
                     </button>
                   )}
-
-                  <button
-                    type="button"
-                    className="primary-btn"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      void onAddToLibrary(game.id)
-                    }}
-                  >
-                    Biblioteca
-                  </button>
                 </div>
               </div>
             </article>

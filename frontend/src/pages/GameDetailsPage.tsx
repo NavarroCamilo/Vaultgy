@@ -7,6 +7,7 @@ type GameDetailsPageProps = {
   libraryGameIds: string[]
   wishlistGameIds: string[]
   onAddToLibrary: (gameId: string) => Promise<void>
+  onRemoveFromLibrary: (gameId: string) => Promise<void>
   onAddToWishlist: (gameId: string) => Promise<void>
   onRemoveFromWishlist: (gameId: string) => Promise<void>
   onBack: () => void
@@ -29,6 +30,7 @@ function GameDetailsPage({
   libraryGameIds,
   wishlistGameIds,
   onAddToLibrary,
+  onRemoveFromLibrary,
   onAddToWishlist,
   onRemoveFromWishlist,
   onBack,
@@ -92,7 +94,7 @@ function GameDetailsPage({
     <>
       <section className="game-hero glass-panel">
         <button type="button" className="ghost-btn" onClick={onBack}>
-          Volver al catálogo
+          Back to catalog
         </button>
 
         <div className="game-hero-grid">
@@ -110,45 +112,53 @@ function GameDetailsPage({
             <h2 className="game-title">{game.title}</h2>
 
             <p className="hero-copy">
-              {game.description || 'Sin descripción disponible.'}
+              {game.description || 'No description available.'}
             </p>
 
             <div className="game-metrics">
               <div className="metric-card metric-card-rating">
-                <span className="metric-label">Rating promedio</span>
+                <span className="metric-label">Average rating</span>
                 <div className={`average-circle ${hasReviews ? 'is-rated' : 'is-empty'}`} aria-label={hasReviews ? `Promedio ${average.toFixed(1)} de 10` : 'Sin reseñas'}>
                   <span>{hasReviews ? average.toFixed(1) : 'X'}</span>
                 </div>
-                <span className="metric-subvalue">{hasReviews ? 'de 10' : 'Sin reseñas'}</span>
+                <span className="metric-subvalue">{hasReviews ? 'of 10' : 'No reviews'}</span>
               </div>
               <div className="metric-stack">
                 <div className="metric-card">
-                  <span className="metric-label">Reseñas</span>
+                  <span className="metric-label">Reviews</span>
                   <span className="metric-value">{reviewCount}</span>
                 </div>
                 <div className="metric-card">
-                  <span className="metric-label">Fecha de lanzamiento</span>
+                  <span className="metric-label">Release date</span>
                   <span className="metric-value">{formatDate(game.releaseDate)}</span>
                 </div>
               </div>
             </div>
 
             <div className="game-actions game-actions-detail">
-              {!inLibrary && !inWishlist && (
-                <button type="button" className="secondary-btn" onClick={() => onAddToWishlist(game.id)}>
-                  Agregar a deseados
+              {inLibrary ? (
+                <button type="button" className="primary-btn" onClick={() => onRemoveFromLibrary(game.id)}>
+                  Remove from Library
                 </button>
-              )}
+              ) : (
+                <>
+                  {!inWishlist && (
+                    <button type="button" className="secondary-btn" onClick={() => onAddToWishlist(game.id)}>
+                      Add to Wishlist
+                    </button>
+                  )}
 
-              {!inLibrary && inWishlist && (
-                <button type="button" className="secondary-btn" onClick={() => onRemoveFromWishlist(game.id)}>
-                  Eliminar de deseados
-                </button>
-              )}
+                  {inWishlist && (
+                    <button type="button" className="secondary-btn" onClick={() => onRemoveFromWishlist(game.id)}>
+                      Remove from Wishlist
+                    </button>
+                  )}
 
-              <button type="button" className="primary-btn" onClick={() => onAddToLibrary(game.id)}>
-                Agregar a biblioteca
-              </button>
+                  <button type="button" className="primary-btn" onClick={() => onAddToLibrary(game.id)}>
+                    Add to Library
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -156,11 +166,11 @@ function GameDetailsPage({
 
       <section className="reviews-section">
         <div className="section-header">
-          <h3>Reseñas recientes</h3>
+          <h3>Recent reviews</h3>
         </div>
 
         {reviews.length === 0 ? (
-          <p className="status">Todavía no hay reseñas para este juego.</p>
+          <p className="status">There are no reviews for this game yet.</p>
         ) : (
           <div className="reviews-list">
             {reviews.map((review) => (

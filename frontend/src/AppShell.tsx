@@ -3,12 +3,13 @@ import axios from 'axios'
 import { api } from './api/http'
 import ToastStack from './components/ToastStack'
 import GameDetailsPage from './pages/GameDetailsPage'
+import LibraryPage from './pages/LibraryPage'
 import CatalogPage from './pages/CatalogPage'
 import WishlistPage from './pages/WishlistPage'
 import type { CollectionItem, Toast, ToastKind, User } from './types/domain'
 import './App.css'
 
-type ActiveView = 'catalog' | 'wishlist' | 'details'
+type ActiveView = 'catalog' | 'wishlist' | 'details' | 'library'
 
 function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -190,7 +191,7 @@ function AppShell() {
       setMenuOpen(false)
       setLoginEmail('')
       setLoginPassword('')
-      pushToast('success', `Sesión iniciada como ${response.data.username}`)
+      pushToast('success', `Logged in as ${response.data.username}`)
     } catch (error) {
       setAuthError(translateAuthError(error, 'No se pudo iniciar sesión. Revisa credenciales.'))
     } finally {
@@ -222,7 +223,7 @@ function AppShell() {
       setRegisterUsername('')
       setRegisterEmail('')
       setRegisterPassword('')
-      pushToast('success', `Cuenta creada e iniciada como ${loginResponse.data.username}`)
+      pushToast('success', `Account created and logged in as ${loginResponse.data.username}`)
     } catch (error) {
       setAuthError(translateAuthError(error, 'No se pudo registrar. Revisa los datos.'))
     } finally {
@@ -256,10 +257,13 @@ function AppShell() {
 
     try {
       await api.post(`/users/me/library/${gameId}`)
+      // optimistic local update: ensure UI reflects removal from wishlist and addition to library immediately
+      setLibraryGameIds((prev) => (prev.includes(gameId) ? prev : [...prev, gameId]))
+      setWishlistGameIds((prev) => prev.filter((id) => id !== gameId))
       await loadUserCollections()
-      pushToast('success', 'Agregado a la biblioteca')
+      pushToast('success', 'Added to library')
     } catch {
-      pushToast('error', 'No se pudo agregar a la biblioteca. Inicia sesión primero.')
+      pushToast('error', 'Could not add to library. Please login first.')
     }
   }
 
@@ -271,10 +275,11 @@ function AppShell() {
 
     try {
       await api.post(`/users/me/wishlist/${gameId}`)
+      setWishlistGameIds((prev) => (prev.includes(gameId) ? prev : [...prev, gameId]))
       await loadUserCollections()
-      pushToast('success', 'Agregado a la lista de deseados')
+      pushToast('success', 'Added to wishlist')
     } catch {
-      pushToast('error', 'No se pudo agregar a la lista de deseados. Inicia sesión primero.')
+      pushToast('error', 'Could not add to wishlist. Please login first.')
     }
   }
 
@@ -286,10 +291,27 @@ function AppShell() {
 
     try {
       await api.delete(`/users/me/wishlist/${gameId}`)
+      setWishlistGameIds((prev) => prev.filter((id) => id !== gameId))
       await loadUserCollections()
-      pushToast('info', 'Eliminado de la lista de deseados')
+      pushToast('info', 'Removed from wishlist')
     } catch {
-      pushToast('error', 'No se pudo eliminar de la lista de deseados.')
+      pushToast('error', 'Could not remove from wishlist.')
+    }
+  }
+
+  const handleRemoveFromLibrary = async (gameId: string) => {
+    if (!currentUser) {
+      promptLogin()
+      return
+    }
+
+    try {
+      await api.delete(`/users/me/library/${gameId}`)
+      setLibraryGameIds((prev) => prev.filter((id) => id !== gameId))
+      await loadUserCollections()
+      pushToast('info', 'Removed from library')
+    } catch {
+      pushToast('error', 'Could not remove from library.')
     }
   }
 
@@ -304,7 +326,7 @@ function AppShell() {
               type="button"
               className="menu-trigger"
               onClick={() => setMenuOpen((previous) => !previous)}
-              aria-label={menuOpen ? 'Cerrar menu lateral' : 'Abrir menu lateral'}
+              aria-label={menuOpen ? 'Close side menu' : 'Open side menu'}
               aria-expanded={menuOpen}
               aria-controls="sidepanel-drawer"
             >
@@ -341,7 +363,7 @@ function AppShell() {
               </button>
             </>
           ) : (
-            <div className="logged-info">Hola, {currentUser.username}</div>
+            <div className="logged-info">Hello, {currentUser.username}</div>
           )}
         </div>
       </header>
@@ -349,7 +371,7 @@ function AppShell() {
       <button
         type="button"
         className={`drawer-overlay ${menuOpen ? 'visible' : ''}`}
-        aria-label="Cerrar menu lateral"
+        aria-label="Close side menu"
         onClick={() => setMenuOpen(false)}
       />
 
@@ -420,7 +442,7 @@ function AppShell() {
               setMenuOpen(false)
             }}
           >
-            Catalogo
+            Catalog
           </button>
           <button
             type="button"
@@ -433,6 +455,18 @@ function AppShell() {
             }}
           >
             Wishlist
+          </button>
+          <button
+            type="button"
+            className={`panel-link ${activeView === 'library' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveView('library')
+              setSelectedGameId(null)
+              setDetailsReturnView('library')
+              setMenuOpen(false)
+            }}
+          >
+            Library
           </button>
           <div style={{ marginTop: 'auto' }}>
             <button type="button" className="panel-link" onClick={handleLogout}>
@@ -447,9 +481,18 @@ function AppShell() {
           <WishlistPage
             wishlistGameIds={wishlistGameIds}
             libraryGameIds={libraryGameIds}
-            onOpenGame={(gameId) => openGameDetails(gameId, 'wishlist')}
+            onOpenGame={(gameId: string) => openGameDetails(gameId, 'wishlist')}
             onAddToLibrary={handleAddToLibrary}
+            onRemoveFromLibrary={handleRemoveFromLibrary}
             onRemoveFromWishlist={handleRemoveFromWishlist}
+          />
+        ) : activeView === 'library' && currentUser ? (
+          <LibraryPage
+            libraryGameIds={libraryGameIds}
+            wishlistGameIds={wishlistGameIds}
+            onOpenGame={(gameId: string) => openGameDetails(gameId, 'library')}
+            onRemoveFromLibrary={handleRemoveFromLibrary}
+            onAddToWishlist={handleAddToWishlist}
           />
         ) : activeView === 'details' && selectedGameId ? (
           <GameDetailsPage
@@ -461,6 +504,7 @@ function AppShell() {
               setActiveView(detailsReturnView)
             }}
             onAddToLibrary={handleAddToLibrary}
+            onRemoveFromLibrary={handleRemoveFromLibrary}
             onAddToWishlist={handleAddToWishlist}
             onRemoveFromWishlist={handleRemoveFromWishlist}
           />
@@ -471,6 +515,7 @@ function AppShell() {
             wishlistGameIds={wishlistGameIds}
             onOpenGame={(gameId) => openGameDetails(gameId, 'catalog')}
             onAddToLibrary={handleAddToLibrary}
+            onRemoveFromLibrary={handleRemoveFromLibrary}
             onAddToWishlist={handleAddToWishlist}
             onRemoveFromWishlist={handleRemoveFromWishlist}
           />
