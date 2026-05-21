@@ -48,6 +48,7 @@ function GameDetailsPage({
   const [reviewRating, setReviewRating] = useState('10')
   const [reviewComment, setReviewComment] = useState('')
   const [reviewSaving, setReviewSaving] = useState(false)
+  const [reviewDeleting, setReviewDeleting] = useState(false)
   const [reviewError, setReviewError] = useState('')
 
   const currentReview = currentUsername
@@ -101,7 +102,27 @@ function GameDetailsPage({
   const closeReviewModal = () => {
     setReviewModalOpen(false)
     setReviewSaving(false)
+    setReviewDeleting(false)
     setReviewError('')
+  }
+
+  const handleDeleteReview = async () => {
+    if (!currentReview) {
+      return
+    }
+
+    setReviewDeleting(true)
+    setReviewError('')
+
+    try {
+      await api.delete(`/users/me/reviews/${currentReview.id}`)
+      await loadDetails()
+      closeReviewModal()
+    } catch {
+      setReviewError('Could not delete the review.')
+    } finally {
+      setReviewDeleting(false)
+    }
   }
 
   const handleSubmitReview = async (event: FormEvent<HTMLFormElement>) => {
@@ -315,6 +336,18 @@ function GameDetailsPage({
               {reviewError && <p className="status error">{reviewError}</p>}
 
               <div className="review-modal-actions">
+                {currentReview && (
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={() => {
+                      void handleDeleteReview()
+                    }}
+                    disabled={reviewSaving || reviewDeleting}
+                  >
+                    {reviewDeleting ? 'Deleting...' : 'Delete review'}
+                  </button>
+                )}
                 <button type="button" className="ghost-btn" onClick={closeReviewModal}>
                   Cancel
                 </button>

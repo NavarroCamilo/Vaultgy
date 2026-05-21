@@ -23,6 +23,16 @@ function AppShell() {
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
 
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [profileMode, setProfileMode] = useState<'info' | 'password'>('info')
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [profileUsername, setProfileUsername] = useState('')
+  const [profileEmail, setProfileEmail] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [libraryGameIds, setLibraryGameIds] = useState<string[]>([])
   const [wishlistGameIds, setWishlistGameIds] = useState<string[]>([])
@@ -101,6 +111,22 @@ function AppShell() {
     setAuthOpen(true)
   }
 
+  const openProfileModal = () => {
+    if (!currentUser) {
+      return
+    }
+
+    setProfileMode('info')
+    setProfileUsername(currentUser.username)
+    setProfileEmail(currentUser.email)
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmNewPassword('')
+    setProfileError(null)
+    setProfileOpen(true)
+    setMenuOpen(false)
+  }
+
   const loadUserCollections = async () => {
     try {
       const [libraryResponse, wishlistResponse] = await Promise.all([
@@ -127,6 +153,7 @@ function AppShell() {
       if (event.key === 'Escape') {
         setMenuOpen(false)
         setAuthOpen(false)
+        setProfileOpen(false)
       }
     }
 
@@ -242,10 +269,70 @@ function AppShell() {
       setWishlistGameIds([])
       setMenuOpen(false)
       setAuthOpen(false)
+      setProfileOpen(false)
       setActiveView('catalog')
       setSelectedGameId(null)
       setDetailsReturnView('catalog')
       pushToast('info', 'Sesión cerrada')
+    }
+  }
+
+  const handleSubmitProfile = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    if (!currentUser) {
+      return
+    }
+
+    setProfileLoading(true)
+    setProfileError(null)
+
+    try {
+      const response = await api.patch<User>('/users/me', {
+        username: profileUsername,
+        email: profileEmail,
+      })
+
+      setCurrentUser(response.data)
+      setProfileOpen(false)
+      pushToast('success', 'Profile updated')
+    } catch (error) {
+      setProfileError(translateAuthError(error, 'Could not update profile.'))
+    } finally {
+      setProfileLoading(false)
+    }
+  }
+
+  const handleSubmitPassword = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    if (!currentUser) {
+      return
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setProfileError('New password and confirmation must match.')
+      return
+    }
+
+    setProfileLoading(true)
+    setProfileError(null)
+
+    try {
+      await api.patch('/auth/password', {
+        currentPassword,
+        newPassword,
+      })
+
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmNewPassword('')
+      setProfileOpen(false)
+      pushToast('success', 'Password updated')
+    } catch (error) {
+      setProfileError(translateAuthError(error, 'Could not update password.'))
+    } finally {
+      setProfileLoading(false)
     }
   }
 
@@ -427,10 +514,90 @@ function AppShell() {
         </div>
       </div>
 
+      <div className={`auth-popover profile-popover ${profileOpen ? 'open' : ''}`} role="dialog" aria-hidden={!profileOpen}>
+        <div className="auth-body">
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`tab ${profileMode === 'info' ? 'active' : ''}`}
+              onClick={() => {
+                setProfileMode('info')
+                setProfileError(null)
+              }}
+            >
+              Profile
+            </button>
+            <button
+              type="button"
+              className={`tab ${profileMode === 'password' ? 'active' : ''}`}
+              onClick={() => {
+                setProfileMode('password')
+                setProfileError(null)
+              }}
+            >
+              Password
+            </button>
+          </div>
+
+          {profileError && <div className="auth-error">{profileError}</div>}
+
+          {profileMode === 'info' ? (
+            <form className="auth-form" onSubmit={handleSubmitProfile}>
+              <label className="field">
+                <span>Username</span>
+                <input type="text" value={profileUsername} onChange={(event) => setProfileUsername(event.target.value)} required />
+              </label>
+              <label className="field">
+                <span>Email</span>
+                <input type="email" value={profileEmail} onChange={(event) => setProfileEmail(event.target.value)} required />
+              </label>
+              <div className="auth-actions-row">
+                <button type="button" className="ghost-btn" onClick={() => setProfileOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn" disabled={profileLoading}>
+                  {profileLoading ? 'Saving...' : 'Save profile'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form className="auth-form" onSubmit={handleSubmitPassword}>
+              <label className="field">
+                <span>Current password</span>
+                <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} minLength={6} required />
+              </label>
+              <label className="field">
+                <span>New password</span>
+                <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={6} required />
+              </label>
+              <label className="field">
+                <span>Confirm new password</span>
+                <input type="password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} minLength={6} required />
+              </label>
+              <div className="auth-actions-row">
+                <button type="button" className="ghost-btn" onClick={() => setProfileOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="primary-btn" disabled={profileLoading}>
+                  {profileLoading ? 'Saving...' : 'Change password'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+
       {currentUser && (
         <aside id="sidepanel-drawer" className={`sidepanel ${menuOpen ? 'open' : ''}`}>
           <h2>Menu</h2>
           <div className="side-user">{currentUser.username}</div>
+          <button
+            type="button"
+            className={`panel-link ${profileOpen ? 'active' : ''}`}
+            onClick={openProfileModal}
+          >
+            Edit info
+          </button>
           <button
             type="button"
             className={`panel-link ${activeView === 'catalog' ? 'active' : ''}`}

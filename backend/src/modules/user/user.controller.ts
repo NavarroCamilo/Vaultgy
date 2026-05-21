@@ -102,6 +102,15 @@ export class UserController {
 		return this.userService.updateUser(id, updateUserDto);
 	}
 
+	@Patch('me')
+	@UseGuards(JwtAuthGuard)
+	updateMyProfile(
+		@Req() request: AuthenticatedRequest,
+		@Body() updateUserDto: UpdateUserDto,
+	) {
+		return this.userService.updateMyProfile(request.user!.id, updateUserDto);
+	}
+
 	@Delete(':id')
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles('ADMIN')

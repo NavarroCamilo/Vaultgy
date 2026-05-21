@@ -1,8 +1,10 @@
 import {
     BadRequestException,
+    ConflictException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
@@ -89,7 +91,35 @@ export class UserService {
                     email: updateUserDto.email ?? undefined,
                 },
             });
-        } catch {
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+                throw new ConflictException('Username or email already exists');
+            }
+
+            throw new NotFoundException('User not found');
+        }
+    }
+
+    async updateMyProfile(id: string, updateUserDto: UpdateUserDto) {
+        try {
+            return await this.prisma.user.update({
+                where: { id },
+                data: {
+                    username: updateUserDto.username ?? undefined,
+                    email: updateUserDto.email ?? undefined,
+                },
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    role: true,
+                },
+            });
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+                throw new ConflictException('Username or email already exists');
+            }
+
             throw new NotFoundException('User not found');
         }
     }

@@ -147,6 +147,10 @@
   font-weight: 700;
 }
 
+.logged-info-button {
+  cursor: pointer;
+}
+
 .ghost-btn,
 .solid-btn,
 .panel-link,
@@ -239,6 +243,12 @@
   border: 1px solid rgba(103, 232, 249, 0.14);
   color: #dbe2f1;
   font-weight: 700;
+}
+
+.side-user-button {
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
 }
 
 .panel-link {
@@ -547,6 +557,27 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
+}
+
+.danger-btn {
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: linear-gradient(180deg, rgba(153, 27, 27, 0.95), rgba(127, 29, 29, 0.88));
+  color: #fee2e2;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(127, 29, 29, 0.22);
+}
+
+.danger-btn:hover {
+  border-color: rgba(248, 113, 113, 0.6);
+  box-shadow: 0 14px 24px rgba(127, 29, 29, 0.3);
+}
+
+.danger-btn:focus-visible {
+  outline: 2px solid rgba(248, 113, 113, 0.75);
+  outline-offset: 2px;
 }
 
 .rating-picker {
