@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import axios from 'axios'
 import { api } from './api/http'
 import './App.css'
 
@@ -38,6 +39,50 @@ function App() {
   const [registerUsername, setRegisterUsername] = useState('')
   const [registerEmail, setRegisterEmail] = useState('')
   const [registerPassword, setRegisterPassword] = useState('')
+
+  const translateAuthError = (error: unknown, fallback: string) => {
+    if (!axios.isAxiosError(error)) {
+      return fallback
+    }
+
+    const data = error.response?.data as { message?: unknown } | undefined
+    const message = data?.message
+
+    if (Array.isArray(message)) {
+      return message
+        .map((item) => String(item))
+        .map((item) => {
+          if (item.includes('email must be an email')) return 'El correo no tiene un formato válido.'
+          if (item.includes('password must be longer than or equal to 6 characters')) return 'La contraseña debe tener al menos 6 caracteres.'
+          if (item.includes('username should not be empty')) return 'Debes escribir un nombre de usuario.'
+          if (item.includes('password should not be empty')) return 'Debes escribir una contraseña.'
+          return item
+        })
+        .join(' ')
+    }
+
+    if (typeof message === 'string') {
+      if (message.includes('Invalid credentials')) {
+        return 'Correo o contraseña incorrectos.'
+      }
+
+      if (message.includes('Username or email already exists')) {
+        return 'Ese usuario o correo ya está registrado.'
+      }
+
+      if (message.includes('JWT_SECRET is required')) {
+        return 'El servidor no está listo para iniciar sesión. Falta configuración interna.'
+      }
+
+      if (message.includes('Authentication required')) {
+        return 'Necesitas iniciar sesión para continuar.'
+      }
+
+      return message
+    }
+
+    return fallback
+  }
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -159,9 +204,8 @@ function App() {
       setMenuOpen(false)
       setLoginEmail('')
       setLoginPassword('')
-      alert('Inicio de sesión exitoso')
     } catch (err) {
-      setAuthError('No se pudo iniciar sesión. Revisa credenciales.')
+      setAuthError(translateAuthError(err, 'No se pudo iniciar sesión. Revisa credenciales.'))
     } finally {
       setAuthLoading(false)
     }
@@ -173,14 +217,15 @@ function App() {
     setAuthLoading(true)
     try {
       await api.post<User>('/auth/register', { username: registerUsername, email: registerEmail, password: registerPassword })
-      // after register, we can opt to set user or ask to login; keep current behavior: prompt to login
+      const loginResponse = await api.post<User>('/auth/login', { email: registerEmail, password: registerPassword })
+      setCurrentUser(loginResponse.data)
       setAuthOpen(false)
+      setMenuOpen(false)
       setRegisterUsername('')
       setRegisterEmail('')
       setRegisterPassword('')
-      alert('Registro exitoso — ahora inicia sesión')
     } catch (err) {
-      setAuthError('No se pudo registrar. Revisa los datos.')
+      setAuthError(translateAuthError(err, 'No se pudo registrar. Revisa los datos.'))
     } finally {
       setAuthLoading(false)
     }
@@ -195,7 +240,6 @@ function App() {
       setCurrentUser(null)
       setMenuOpen(false)
       setAuthOpen(false)
-      alert('Sesión cerrada')
     }
   }
 
