@@ -5,18 +5,36 @@ import {
 	Get,
 	Param,
 	Patch,
+	Post,
 	Query,
 	DefaultValuePipe,
 	ParseIntPipe,
+	Req,
+	UseGuards,
 } from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
 
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { WaitlistService } from '../waitlist/waitlist.service';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
 
+type AuthenticatedRequest = ExpressRequest & {
+	user?: {
+		id: string;
+		username: string;
+		email: string;
+		role: string;
+	};
+};
+
 @Controller('users')
 export class UserController {
-	constructor(private readonly userService: UserService) {}
+	constructor(
+		private readonly userService: UserService,
+		private readonly waitlistService: WaitlistService,
+	) {}
 
 	@Get()
 	findAll(@Query('take') take?: string) {
@@ -66,5 +84,44 @@ export class UserController {
 	@Patch(':id/role')
 	changeRole(@Param('id') id: string, @Body() changeRoleDto: ChangeRoleDto) {
 		return this.userService.changeRole(id, changeRoleDto);
+	}
+
+	@Post('me/waitlist/:gameId')
+	@UseGuards(JwtAuthGuard)
+	addMyGameToWaitlist(
+		@Req() request: AuthenticatedRequest,
+		@Param('gameId') gameId: string,
+	) {
+		return this.waitlistService.addToWaitlist(request.user!.id, gameId);
+	}
+
+	@Delete('me/waitlist/:gameId')
+	@UseGuards(JwtAuthGuard)
+	removeMyGameFromWaitlist(
+		@Req() request: AuthenticatedRequest,
+		@Param('gameId') gameId: string,
+	) {
+		return this.waitlistService.removeFromWaitlist(request.user!.id, gameId);
+	}
+
+	@Get('me/waitlist/detailed')
+	@UseGuards(JwtAuthGuard)
+	getMyWaitlistDetailed(@Req() request: AuthenticatedRequest) {
+		return this.waitlistService.getUserWaitlistDetailed(request.user!.id);
+	}
+
+	@Get('me/waitlist/:gameId')
+	@UseGuards(JwtAuthGuard)
+	isGameInMyWaitlist(
+		@Req() request: AuthenticatedRequest,
+		@Param('gameId') gameId: string,
+	) {
+		return this.waitlistService.isInWaitlist(request.user!.id, gameId);
+	}
+
+	@Get('me/waitlist')
+	@UseGuards(JwtAuthGuard)
+	getMyWaitlist(@Req() request: AuthenticatedRequest) {
+		return this.waitlistService.getUserWaitlist(request.user!.id);
 	}
 }
