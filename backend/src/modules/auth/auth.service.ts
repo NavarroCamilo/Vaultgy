@@ -16,6 +16,7 @@ import { RegisterDto } from './dto/register.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 
 type PublicUser = Pick<User, 'id' | 'username' | 'email' | 'role'>;
+type AuthenticatedRequest = Request & { user?: PublicUser };
 
 @Injectable()
 export class AuthService {
@@ -30,59 +31,6 @@ export class AuthService {
 		email: true,
 		role: true,
 	} as const;
-
-	private getTokenFromRequest(request: Request) {
-		const cookieHeader = request.headers.cookie;
-
-		if (!cookieHeader) {
-			throw new UnauthorizedException('Authentication required');
-		}
-
-		const cookies = Object.fromEntries(
-			cookieHeader.split(';').map((cookie) => {
-				const [key, ...valueParts] = cookie.trim().split('=');
-
-				return [key, decodeURIComponent(valueParts.join('='))];
-			}),
-		);
-
-		const token = cookies.auth_token;
-
-		if (!token) {
-			throw new UnauthorizedException('Authentication required');
-		}
-
-		return token;
-	}
-
-	private async getUserFromToken(request: Request) {
-		const token = this.getTokenFromRequest(request);
-		const secret = process.env.JWT_SECRET;
-
-		if (!secret) {
-			throw new BadRequestException('JWT_SECRET is required');
-		}
-
-		let payload: { sub: string };
-
-		try {
-			payload = await this.jwtService.verifyAsync<{ sub: string }>(token, {
-				secret,
-			});
-		} catch {
-			throw new UnauthorizedException('Invalid or expired token');
-		}
-
-		const user = await this.prisma.user.findUnique({
-			where: { id: payload.sub },
-		});
-
-		if (!user) {
-			throw new UnauthorizedException('User not found');
-		}
-
-		return user;
-	}
 
 	private toPublicUser(user: User): PublicUser {
 		return {
@@ -163,17 +111,33 @@ export class AuthService {
 		};
 	}
 
-	async getProfile(request: Request) {
-		const user = await this.getUserFromToken(request);
+	async getProfile(request: AuthenticatedRequest) {
+		const user = request.user as PublicUser | undefined;
 
-		return this.toPublicUser(user);
+		if (!user) {
+			throw new UnauthorizedException('Authentication required');
+		}
+
+		return user;
 	}
 
 	async updatePassword(
-		request: Request,
+		request: AuthenticatedRequest,
 		updatePasswordDto: UpdatePasswordDto,
 	) {
-		const user = await this.getUserFromToken(request);
+		const authUser = request.user as PublicUser | undefined;
+
+		if (!authUser) {
+			throw new UnauthorizedException('Authentication required');
+		}
+
+		const user = await this.prisma.user.findUnique({
+			where: { id: authUser.id },
+		});
+
+		if (!user) {
+			throw new UnauthorizedException('User not found');
+		}
 
 		const passwordMatches = await compare(
 			updatePasswordDto.currentPassword,

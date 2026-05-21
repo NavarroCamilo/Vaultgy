@@ -7,13 +7,24 @@ import {
 	Post,
 	Req,
 	Res,
+	UseGuards,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request as ExpressRequest, Response } from 'express';
 
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+
+type AuthenticatedRequest = ExpressRequest & {
+	user?: {
+		id: string;
+		username: string;
+		email: string;
+		role: string;
+	};
+};
 
 @Controller('auth')
 export class AuthController {
@@ -42,6 +53,7 @@ export class AuthController {
 	}
 
 	@Post('logout')
+	@UseGuards(JwtAuthGuard)
 	@HttpCode(200)
 	logout(@Res({ passthrough: true }) response: Response) {
 		response.clearCookie('auth_token', {
@@ -54,12 +66,14 @@ export class AuthController {
 	}
 
 	@Get('profile')
-	getProfile(@Req() request: Request) {
+	@UseGuards(JwtAuthGuard)
+	getProfile(@Req() request: AuthenticatedRequest) {
 		return this.authService.getProfile(request);
 	}
 
 	@Patch('password')
-	updatePassword(@Req() request: Request, @Body() updatePasswordDto: UpdatePasswordDto) {
+	@UseGuards(JwtAuthGuard)
+	updatePassword(@Req() request: AuthenticatedRequest, @Body() updatePasswordDto: UpdatePasswordDto) {
 		return this.authService.updatePassword(request, updatePasswordDto);
 	}
 }
