@@ -3,6 +3,7 @@ import {
 	Controller,
 	Delete,
 	Get,
+	BadRequestException,
 	Param,
 	Patch,
 	Post,
@@ -17,9 +18,12 @@ import type { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { WaitlistService } from '../waitlist/waitlist.service';
 import { LibraryService } from '../library/library.service';
+import { ReviewService } from '../review/review.service';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
+import { UpdateReviewDto } from '../review/dto/update-review.dto';
+import { CreateMyReviewDto } from './dto/create-my-review.dto';
 
 type AuthenticatedRequest = ExpressRequest & {
 	user?: {
@@ -36,6 +40,7 @@ export class UserController {
 		private readonly userService: UserService,
 		private readonly waitlistService: WaitlistService,
 		private readonly libraryService: LibraryService,
+		private readonly reviewService: ReviewService,
 	) {}
 
 	@Get()
@@ -152,5 +157,40 @@ export class UserController {
 	@UseGuards(JwtAuthGuard)
 	getMyLibrary(@Req() request: AuthenticatedRequest) {
 		return this.libraryService.getUserLibrary(request.user!.id);
+	}
+
+	@Post('me/reviews/:gameId')
+	@UseGuards(JwtAuthGuard)
+	async addMyReview(
+		@Req() request: AuthenticatedRequest,
+		@Param('gameId') gameId: string,
+		@Body() createMyReviewDto: CreateMyReviewDto,
+	) {
+		const inLibrary = await this.libraryService.isInLibrary(request.user!.id, gameId);
+
+		if (!inLibrary) {
+			throw new BadRequestException('Game must be in library before creating a review');
+		}
+
+		return this.reviewService.createForUser(request.user!.id, gameId, createMyReviewDto);
+	}
+
+	@Patch('me/reviews/:reviewId')
+	@UseGuards(JwtAuthGuard)
+	updateMyReview(
+		@Req() request: AuthenticatedRequest,
+		@Param('reviewId') reviewId: string,
+		@Body() updateReviewDto: UpdateReviewDto,
+	) {
+		return this.reviewService.updateByUser(request.user!.id, reviewId, updateReviewDto);
+	}
+
+	@Delete('me/reviews/:reviewId')
+	@UseGuards(JwtAuthGuard)
+	deleteMyReview(
+		@Req() request: AuthenticatedRequest,
+		@Param('reviewId') reviewId: string,
+	) {
+		return this.reviewService.deleteByUser(request.user!.id, reviewId);
 	}
 }
