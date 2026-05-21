@@ -10,6 +10,8 @@ import {LibraryModule} from './modules/library/library.module';
 import {ReviewModule} from './modules/review/review.module';
 
 @Module({
-  imports: [PrismaModule, GameModule, UserModule, AuthModule, WishlistModule, LibraryModule, ReviewModule], 
+  imports: [PrismaModule, GameModule, UserModule, AuthModule, WishlistModule, LibraryModule, ReviewModule],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
