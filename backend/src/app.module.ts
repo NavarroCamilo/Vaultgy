@@ -4,8 +4,9 @@ import { AppService } from './app.service';
 import {PrismaModule} from './modules/prisma/prisma.module';
 import {GameModule} from './modules/game/game.module';
 import {UserModule} from './modules/user/user.module';
+import {AuthModule} from './modules/auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, GameModule, UserModule], 
+  imports: [PrismaModule, GameModule, UserModule, AuthModule], 
 })
 export class AppModule {}
