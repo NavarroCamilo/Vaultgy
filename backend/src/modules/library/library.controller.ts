@@ -1,8 +1,13 @@
-import { Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
 
 import { LibraryService } from './library.service';
+import { Roles } from '../../decorators/roles.decorator';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { RolesGuard } from '../../guards/roles.guard';
 
 @Controller('library')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class LibraryController {
   constructor(private readonly libraryService: LibraryService) {}
 

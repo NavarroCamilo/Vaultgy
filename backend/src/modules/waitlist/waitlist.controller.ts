@@ -1,8 +1,14 @@
-import { Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
 
+import { AuthModule } from '../auth/auth.module';
 import { WaitlistService } from './waitlist.service';
+import { Roles } from '../../decorators/roles.decorator';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { RolesGuard } from '../../guards/roles.guard';
 
 @Controller('waitlist')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class WaitlistController {
   constructor(private readonly waitlistService: WaitlistService) {}
 

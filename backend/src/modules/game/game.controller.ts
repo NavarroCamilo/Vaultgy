@@ -11,9 +11,14 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 
+import { UseGuards } from '@nestjs/common';
+
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { RolesGuard } from '../../guards/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 
 @Controller('games')
 export class GameController {
@@ -50,11 +55,15 @@ export class GameController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   create(@Body() createGameDto: CreateGameDto) {
     return this.gameService.create(createGameDto);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   update(
     @Param('id') id: string,
     @Body() updateGameDto: UpdateGameDto,
@@ -63,6 +72,8 @@ export class GameController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   delete(@Param('id') id: string) {
     return this.gameService.delete(id);
   }

@@ -24,6 +24,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
 import { UpdateReviewDto } from '../review/dto/update-review.dto';
 import { CreateMyReviewDto } from './dto/create-my-review.dto';
+import { Roles } from '../../decorators/roles.decorator';
+import { RolesGuard } from '../../guards/roles.guard';
 
 type AuthenticatedRequest = ExpressRequest & {
 	user?: {
@@ -44,6 +46,8 @@ export class UserController {
 	) {}
 
 	@Get()
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	findAll(@Query('take') take?: string) {
 		const parsedTake = take === undefined ? undefined : Number.parseInt(take, 10);
 
@@ -53,6 +57,8 @@ export class UserController {
 	}
 
 	@Get('paged')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	findAllPaged(
 		@Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
 		@Query('pageSize', new DefaultValuePipe(10), ParseIntPipe) pageSize: number,
@@ -61,21 +67,33 @@ export class UserController {
 	}
 
 	@Get('search')
-	findByName(@Query('name') name: string) {
-		return this.userService.findByName(name);
+	@UseGuards(JwtAuthGuard)
+	findByUsername(
+		@Query('username') username?: string,
+	) {
+		if (!username || !username.trim()) {
+			throw new BadRequestException('username is required');
+		}
+
+		return this.userService.findByName(username.trim());
 	}
 
-	@Get('search/:name')
-	findByNamePath(@Param('name') name: string) {
-		return this.userService.findByName(name);
+	@Get('search/:username')
+	@UseGuards(JwtAuthGuard)
+	findByUsernamePath(@Param('username') username: string) {
+		return this.userService.findByName(username);
 	}
 
 	@Get(':id')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	findById(@Param('id') id: string) {
 		return this.userService.findById(id);
 	}
 
 	@Patch(':id')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	updateUser(
 		@Param('id') id: string,
 		@Body() updateUserDto: UpdateUserDto,
@@ -84,11 +102,15 @@ export class UserController {
 	}
 
 	@Delete(':id')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	deleteUser(@Param('id') id: string) {
 		return this.userService.deleteUser(id);
 	}
 
 	@Patch(':id/role')
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles('ADMIN')
 	changeRole(@Param('id') id: string, @Body() changeRoleDto: ChangeRoleDto) {
 		return this.userService.changeRole(id, changeRoleDto);
 	}

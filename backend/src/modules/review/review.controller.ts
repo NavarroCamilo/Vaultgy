@@ -11,11 +11,18 @@ import {
 	Query,
 } from '@nestjs/common';
 
+import { UseGuards } from '@nestjs/common';
+
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewService } from './review.service';
+import { Roles } from '../../decorators/roles.decorator';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { RolesGuard } from '../../guards/roles.guard';
 
 @Controller('reviews')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class ReviewController {
 	constructor(private readonly reviewService: ReviewService) {}
 
