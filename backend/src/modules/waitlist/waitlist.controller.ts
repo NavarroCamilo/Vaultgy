@@ -22,10 +22,6 @@ export class WaitlistController {
     return this.waitlistService.removeFromWaitlist(userId, gameId);
   }
 
-  @Get(':userId/detailed')
-  getUserWaitlistDetailed(@Param('userId') userId: string) {
-    return this.waitlistService.getUserWaitlistDetailed(userId);
-  }
 
   @Get(':userId/game/:gameId')
   isInWaitlist(

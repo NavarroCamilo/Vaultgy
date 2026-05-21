@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
 import { WaitlistModule } from '../waitlist/waitlist.module';
+import { LibraryModule } from '../library/library.module';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
 
 @Module({
-    imports: [AuthModule, WaitlistModule],
+    imports: [AuthModule, WaitlistModule, LibraryModule],
     controllers: [UserController],
     providers: [UserService],
 

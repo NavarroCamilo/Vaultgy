@@ -83,7 +83,7 @@ model Review {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, gameId]) // No multiple reviews per user per game
+  @@unique([userId, gameId])
   @@index([gameId])
 }
 

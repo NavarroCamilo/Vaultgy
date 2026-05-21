@@ -16,6 +16,7 @@ import type { Request as ExpressRequest } from 'express';
 
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { WaitlistService } from '../waitlist/waitlist.service';
+import { LibraryService } from '../library/library.service';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
@@ -34,6 +35,7 @@ export class UserController {
 	constructor(
 		private readonly userService: UserService,
 		private readonly waitlistService: WaitlistService,
+		private readonly libraryService: LibraryService,
 	) {}
 
 	@Get()
@@ -104,12 +106,6 @@ export class UserController {
 		return this.waitlistService.removeFromWaitlist(request.user!.id, gameId);
 	}
 
-	@Get('me/waitlist/detailed')
-	@UseGuards(JwtAuthGuard)
-	getMyWaitlistDetailed(@Req() request: AuthenticatedRequest) {
-		return this.waitlistService.getUserWaitlistDetailed(request.user!.id);
-	}
-
 	@Get('me/waitlist/:gameId')
 	@UseGuards(JwtAuthGuard)
 	isGameInMyWaitlist(
@@ -123,5 +119,38 @@ export class UserController {
 	@UseGuards(JwtAuthGuard)
 	getMyWaitlist(@Req() request: AuthenticatedRequest) {
 		return this.waitlistService.getUserWaitlist(request.user!.id);
+	}
+
+	@Post('me/library/:gameId')
+	@UseGuards(JwtAuthGuard)
+	addMyGameToLibrary(
+		@Req() request: AuthenticatedRequest,
+		@Param('gameId') gameId: string,
+	) {
+		return this.libraryService.addToLibrary(request.user!.id, gameId);
+	}
+
+	@Delete('me/library/:gameId')
+	@UseGuards(JwtAuthGuard)
+	removeMyGameFromLibrary(
+		@Req() request: AuthenticatedRequest,
+		@Param('gameId') gameId: string,
+	) {
+		return this.libraryService.removeFromLibrary(request.user!.id, gameId);
+	}
+
+	@Get('me/library/:gameId')
+	@UseGuards(JwtAuthGuard)
+	isGameInMyLibrary(
+		@Req() request: AuthenticatedRequest,
+		@Param('gameId') gameId: string,
+	) {
+		return this.libraryService.isInLibrary(request.user!.id, gameId);
+	}
+
+	@Get('me/library')
+	@UseGuards(JwtAuthGuard)
+	getMyLibrary(@Req() request: AuthenticatedRequest) {
+		return this.libraryService.getUserLibrary(request.user!.id);
 	}
 }
