@@ -1,0 +1,195 @@
+import { useEffect, useRef, useState } from 'react'
+import { api } from '../api/http'
+import type { Game } from '../types/domain'
+
+type CatalogPageProps = {
+  resetSignal: number
+  libraryGameIds: string[]
+  wishlistGameIds: string[]
+  onAddToLibrary: (gameId: string) => Promise<void>
+  onAddToWishlist: (gameId: string) => Promise<void>
+  onRemoveFromWishlist: (gameId: string) => Promise<void>
+}
+
+function CatalogPage({
+  resetSignal,
+  libraryGameIds,
+  wishlistGameIds,
+  onAddToLibrary,
+  onAddToWishlist,
+  onRemoveFromWishlist,
+}: CatalogPageProps) {
+  const [games, setGames] = useState<Game[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [searchDraft, setSearchDraft] = useState('')
+  const [searchColumn, setSearchColumn] = useState<'title' | 'genre'>('title')
+  const mountedRef = useRef(false)
+
+  useEffect(() => {
+    const loadGames = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const response = await api.get<Game[]>('/games')
+        setGames(response.data)
+      } catch {
+        setError('No se pudieron cargar los juegos. Revisa que el backend esté corriendo.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadGames()
+  }, [])
+
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true
+      return
+    }
+
+    setSearchDraft('')
+    setSearchColumn('title')
+    void loadAllGames()
+  }, [resetSignal])
+
+  const loadAllGames = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await api.get<Game[]>('/games')
+      setGames(response.data)
+    } catch {
+      setError('No se pudieron cargar los juegos. Revisa que el backend esté corriendo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const runSearch = async () => {
+    const normalizedQuery = searchDraft.trim()
+
+    if (!normalizedQuery) {
+      void loadAllGames()
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await api.get<Game[]>('/games/search', {
+        params: {
+          column: searchColumn,
+          value: normalizedQuery,
+        },
+      })
+
+      setGames(response.data)
+    } catch {
+      setError('No se pudieron encontrar juegos con ese filtro.')
+      setGames([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      <section className="hero-banner">
+        <p className="hero-tag">Game Catalog</p>
+        <h2>Encuentra tu proximo juego</h2>
+        <p className="hero-copy">
+          Busca por titulo o genero y administra tu coleccion en Library y Wishlist.
+        </p>
+        <form
+          className="search-bar"
+          onSubmit={(event) => {
+            event.preventDefault()
+            runSearch()
+          }}
+        >
+          <input
+            className="search-input"
+            value={searchDraft}
+            onChange={(event) => setSearchDraft(event.target.value)}
+            placeholder="Buscar juegos..."
+          />
+          <select
+            className="search-select"
+            value={searchColumn}
+            onChange={(event) => setSearchColumn(event.target.value as 'title' | 'genre')}
+          >
+            <option value="title">Title</option>
+            <option value="genre">Genre</option>
+          </select>
+          <button type="submit" className="search-button">
+            Buscar
+          </button>
+        </form>
+      </section>
+
+      <section className="games-grid" aria-live="polite">
+        {loading && <p className="status">Cargando juegos...</p>}
+        {!loading && error && <p className="status error">{error}</p>}
+
+        {!loading && !error && games.length === 0 && (
+          <p className="status">No hay juegos que coincidan con tu busqueda.</p>
+        )}
+
+        {!loading && !error && games.map((game) => {
+          const inLibrary = libraryGameIds.includes(game.id)
+          const inWishlist = wishlistGameIds.includes(game.id)
+
+          return (
+            <article className="game-card" key={game.id}>
+              <img
+                src={game.coverImage || 'https://placehold.co/600x350/1f2937/e5e7eb?text=Vaultgy'}
+                alt={game.title}
+                loading="lazy"
+              />
+              <div className="game-meta">
+                <h3>{game.title}</h3>
+                <p className="game-genre">{game.genre ?? 'Unknown genre'}</p>
+                <div className="game-actions">
+                  {!inLibrary && !inWishlist && (
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => onAddToWishlist(game.id)}
+                    >
+                      Lista de deseados
+                    </button>
+                  )}
+
+                  {!inLibrary && inWishlist && (
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => onRemoveFromWishlist(game.id)}
+                    >
+                      Eliminar de deseados
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={() => onAddToLibrary(game.id)}
+                  >
+                    Biblioteca
+                  </button>
+                </div>
+              </div>
+            </article>
+          )
+        })}
+      </section>
+    </>
+  )
+}
+
+export default CatalogPage
