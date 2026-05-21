@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from './api/http'
 import './App.css'
 
@@ -15,8 +15,30 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchDraft, setSearchDraft] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchColumn, setSearchColumn] = useState<'title' | 'genre'>('title')
   const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
 
   useEffect(() => {
     const loadGames = async () => {
@@ -36,23 +58,55 @@ function App() {
     void loadGames()
   }, [])
 
-  const filteredGames = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase()
+  const filteredGames = games
+
+  const loadAllGames = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await api.get<Game[]>('/games')
+      setGames(response.data)
+    } catch {
+      setError('No se pudieron cargar los juegos. Revisa que el backend esté corriendo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleBrandClick = () => {
+    setSearchDraft('')
+    setSearchColumn('title')
+    setMenuOpen(false)
+    void loadAllGames()
+  }
+
+  const runSearch = async () => {
+    const normalizedQuery = searchDraft.trim()
 
     if (!normalizedQuery) {
-      return games
+      void loadAllGames()
+      return
     }
 
-    return games.filter((game) => {
-      const byTitle = game.title.toLowerCase().includes(normalizedQuery)
-      const byGenre = (game.genre ?? '').toLowerCase().includes(normalizedQuery)
+    setLoading(true)
+    setError('')
 
-      return byTitle || byGenre
-    })
-  }, [games, searchQuery])
+    try {
+      const response = await api.get<Game[]>('/games/search', {
+        params: {
+          column: searchColumn,
+          value: normalizedQuery,
+        },
+      })
 
-  const runSearch = () => {
-    setSearchQuery(searchDraft)
+      setGames(response.data)
+    } catch {
+      setError('No se pudieron encontrar juegos con ese filtro.')
+      setGames([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleLogin = async () => {
@@ -64,6 +118,24 @@ function App() {
     }
   }
 
+  const handleAddToLibrary = async (gameId: string) => {
+    try {
+      await api.post(`/users/me/library/${gameId}`)
+      alert('Agregado a la biblioteca')
+    } catch {
+      alert('No se pudo agregar a la biblioteca. Inicia sesión primero.')
+    }
+  }
+
+  const handleAddToWaitlist = async (gameId: string) => {
+    try {
+      await api.post(`/users/me/waitlist/${gameId}`)
+      alert('Agregado a la lista de deseado')
+    } catch {
+      alert('No se pudo agregar a la lista de deseado. Inicia sesión primero.')
+    }
+  }
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -72,11 +144,15 @@ function App() {
             type="button"
             className="menu-trigger"
             onClick={() => setMenuOpen((previous) => !previous)}
-            aria-label="Open side menu"
+            aria-label={menuOpen ? 'Cerrar menu lateral' : 'Abrir menu lateral'}
+            aria-expanded={menuOpen}
+            aria-controls="sidepanel-drawer"
           >
             ☰
           </button>
-          <h1 className="brand">VAULTGY</h1>
+          <button type="button" className="brand-button" onClick={handleBrandClick}>
+            <h1 className="brand">VAULTGY</h1>
+          </button>
         </div>
         <div className="auth-actions">
           <button type="button" className="ghost-btn" onClick={handleLogin}>Login</button>
@@ -84,10 +160,17 @@ function App() {
         </div>
       </header>
 
-      <aside className={`sidepanel ${menuOpen ? 'open' : ''}`}>
+      <button
+        type="button"
+        className={`drawer-overlay ${menuOpen ? 'visible' : ''}`}
+        aria-label="Cerrar menu lateral"
+        onClick={() => setMenuOpen(false)}
+      />
+
+      <aside id="sidepanel-drawer" className={`sidepanel ${menuOpen ? 'open' : ''}`}>
         <h2>Menu</h2>
-        <button type="button" className="panel-link">Library</button>
-        <button type="button" className="panel-link">Waitlist</button>
+        <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Library</button>
+        <button type="button" className="panel-link" onClick={() => setMenuOpen(false)}>Waitlist</button>
       </aside>
 
       <main className="content">
@@ -110,6 +193,14 @@ function App() {
               onChange={(event) => setSearchDraft(event.target.value)}
               placeholder="Buscar juegos..."
             />
+            <select
+              className="search-select"
+              value={searchColumn}
+              onChange={(event) => setSearchColumn(event.target.value as 'title' | 'genre')}
+            >
+              <option value="title">Title</option>
+              <option value="genre">Genre</option>
+            </select>
             <button type="submit" className="search-button">
               Buscar
             </button>
@@ -132,11 +223,24 @@ function App() {
                 loading="lazy"
               />
               <div className="game-meta">
-                <div className="game-top">
-                  <h3>{game.title}</h3>
-                  <span>{game.genre ?? 'Unknown'}</span>
+                <h3>{game.title}</h3>
+                <p className="game-genre">{game.genre ?? 'Unknown genre'}</p>
+                <div className="game-actions">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => handleAddToWaitlist(game.id)}
+                  >
+                    Lista de deseado
+                  </button>
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={() => handleAddToLibrary(game.id)}
+                  >
+                    Biblioteca
+                  </button>
                 </div>
-                <p>{game.description ?? 'Sin descripcion disponible.'}</p>
               </div>
             </article>
           ))}
