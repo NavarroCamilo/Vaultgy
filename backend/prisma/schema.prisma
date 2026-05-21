@@ -100,5 +100,4 @@ model WishlistItem {
 
   @@unique([userId, gameId])
   @@index([userId])
-  @@map("WaitlistItem")
 }

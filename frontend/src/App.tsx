@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { api } from './api/http'
 import './App.css'
@@ -18,6 +18,18 @@ type User = {
   role: string
 }
 
+type CollectionItem = {
+  gameId: string
+}
+
+type ToastKind = 'success' | 'error' | 'info'
+
+type Toast = {
+  id: number
+  kind: ToastKind
+  message: string
+}
+
 function App() {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,6 +44,9 @@ function App() {
   const [authError, setAuthError] = useState<string | null>(null)
 
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [libraryGameIds, setLibraryGameIds] = useState<string[]>([])
+  const [wishlistGameIds, setWishlistGameIds] = useState<string[]>([])
+  const [toasts, setToasts] = useState<Toast[]>([])
 
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -39,6 +54,7 @@ function App() {
   const [registerUsername, setRegisterUsername] = useState('')
   const [registerEmail, setRegisterEmail] = useState('')
   const [registerPassword, setRegisterPassword] = useState('')
+  const toastIdRef = useRef(0)
 
   const translateAuthError = (error: unknown, fallback: string) => {
     if (!axios.isAxiosError(error)) {
@@ -131,8 +147,11 @@ function App() {
       try {
         const res = await api.get<User>('/auth/profile')
         setCurrentUser(res.data)
+        await loadUserCollections()
       } catch {
         setCurrentUser(null)
+        setLibraryGameIds([])
+        setWishlistGameIds([])
       }
     }
 
@@ -160,6 +179,42 @@ function App() {
     setSearchColumn('title')
     setMenuOpen(false)
     void loadAllGames()
+  }
+
+  const promptLogin = () => {
+    setAuthMode('login')
+    setAuthError(null)
+    setAuthOpen(true)
+  }
+
+  const removeToast = (id: number) => {
+    setToasts((current) => current.filter((toast) => toast.id !== id))
+  }
+
+  const pushToast = (kind: ToastKind, message: string) => {
+    const id = toastIdRef.current + 1
+    toastIdRef.current = id
+
+    setToasts((current) => [...current, { id, kind, message }])
+
+    window.setTimeout(() => {
+      removeToast(id)
+    }, 3000)
+  }
+
+  const loadUserCollections = async () => {
+    try {
+      const [libraryResponse, wishlistResponse] = await Promise.all([
+        api.get<CollectionItem[]>('/users/me/library'),
+        api.get<CollectionItem[]>('/users/me/wishlist'),
+      ])
+
+      setLibraryGameIds(libraryResponse.data.map((item) => item.gameId))
+      setWishlistGameIds(wishlistResponse.data.map((item) => item.gameId))
+    } catch {
+      setLibraryGameIds([])
+      setWishlistGameIds([])
+    }
   }
 
   const runSearch = async () => {
@@ -200,10 +255,12 @@ function App() {
       const res = await api.post<User>('/auth/login', { email: loginEmail, password: loginPassword })
       // backend returns the user and sets auth cookie
       setCurrentUser(res.data)
+      await loadUserCollections()
       setAuthOpen(false)
       setMenuOpen(false)
       setLoginEmail('')
       setLoginPassword('')
+      pushToast('success', `Sesión iniciada como ${res.data.username}`)
     } catch (err) {
       setAuthError(translateAuthError(err, 'No se pudo iniciar sesión. Revisa credenciales.'))
     } finally {
@@ -219,11 +276,13 @@ function App() {
       await api.post<User>('/auth/register', { username: registerUsername, email: registerEmail, password: registerPassword })
       const loginResponse = await api.post<User>('/auth/login', { email: registerEmail, password: registerPassword })
       setCurrentUser(loginResponse.data)
+      await loadUserCollections()
       setAuthOpen(false)
       setMenuOpen(false)
       setRegisterUsername('')
       setRegisterEmail('')
       setRegisterPassword('')
+      pushToast('success', `Cuenta creada e iniciada como ${loginResponse.data.username}`)
     } catch (err) {
       setAuthError(translateAuthError(err, 'No se pudo registrar. Revisa los datos.'))
     } finally {
@@ -238,31 +297,77 @@ function App() {
       // ignore errors
     } finally {
       setCurrentUser(null)
+      setLibraryGameIds([])
+      setWishlistGameIds([])
       setMenuOpen(false)
       setAuthOpen(false)
+      pushToast('info', 'Sesión cerrada')
     }
   }
 
   const handleAddToLibrary = async (gameId: string) => {
+    if (!currentUser) {
+      promptLogin()
+      return
+    }
+
     try {
       await api.post(`/users/me/library/${gameId}`)
-      alert('Agregado a la biblioteca')
+      await loadUserCollections()
+      pushToast('success', 'Agregado a la biblioteca')
     } catch {
-      alert('No se pudo agregar a la biblioteca. Inicia sesión primero.')
+      pushToast('error', 'No se pudo agregar a la biblioteca. Inicia sesión primero.')
     }
   }
 
   const handleAddToWishlist = async (gameId: string) => {
+    if (!currentUser) {
+      promptLogin()
+      return
+    }
+
     try {
       await api.post(`/users/me/wishlist/${gameId}`)
-      alert('Agregado a la lista de deseado')
+      await loadUserCollections()
+      pushToast('success', 'Agregado a la lista de deseados')
     } catch {
-      alert('No se pudo agregar a la lista de deseado. Inicia sesión primero.')
+      pushToast('error', 'No se pudo agregar a la lista de deseados. Inicia sesión primero.')
+    }
+  }
+
+  const handleRemoveFromWishlist = async (gameId: string) => {
+    if (!currentUser) {
+      promptLogin()
+      return
+    }
+
+    try {
+      await api.delete(`/users/me/wishlist/${gameId}`)
+      await loadUserCollections()
+      pushToast('info', 'Eliminado de la lista de deseados')
+    } catch {
+      pushToast('error', 'No se pudo eliminar de la lista de deseados.')
     }
   }
 
   return (
     <div className="app-shell">
+      <div className="toast-stack" aria-live="polite" aria-atomic="true">
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`toast toast-${toast.kind}`}>
+            <span className="toast-message">{toast.message}</span>
+            <button
+              type="button"
+              className="toast-close"
+              onClick={() => removeToast(toast.id)}
+              aria-label="Cerrar notificación"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+
       <header className="topbar">
         <div className="brand-group">
             {currentUser && (
@@ -411,35 +516,53 @@ function App() {
             <p className="status">No hay juegos que coincidan con tu busqueda.</p>
           )}
 
-          {!loading && !error && filteredGames.map((game) => (
-            <article className="game-card" key={game.id}>
-              <img
-                src={game.coverImage || 'https://placehold.co/600x350/1f2937/e5e7eb?text=Vaultgy'}
-                alt={game.title}
-                loading="lazy"
-              />
-              <div className="game-meta">
-                <h3>{game.title}</h3>
-                <p className="game-genre">{game.genre ?? 'Unknown genre'}</p>
-                <div className="game-actions">
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={() => handleAddToWishlist(game.id)}
-                  >
-                    Lista de deseos
-                  </button>
-                  <button
-                    type="button"
-                    className="primary-btn"
-                    onClick={() => handleAddToLibrary(game.id)}
-                  >
-                    Biblioteca
-                  </button>
+          {!loading && !error && filteredGames.map((game) => {
+            const inLibrary = libraryGameIds.includes(game.id)
+            const inWishlist = wishlistGameIds.includes(game.id)
+
+            return (
+              <article className="game-card" key={game.id}>
+                <img
+                  src={game.coverImage || 'https://placehold.co/600x350/1f2937/e5e7eb?text=Vaultgy'}
+                  alt={game.title}
+                  loading="lazy"
+                />
+                <div className="game-meta">
+                  <h3>{game.title}</h3>
+                  <p className="game-genre">{game.genre ?? 'Unknown genre'}</p>
+                  <div className="game-actions">
+                    {!inLibrary && !inWishlist && (
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleAddToWishlist(game.id)}
+                      >
+                        Lista de deseados
+                      </button>
+                    )}
+
+                    {!inLibrary && inWishlist && (
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => handleRemoveFromWishlist(game.id)}
+                      >
+                        Eliminar de deseados
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      onClick={() => handleAddToLibrary(game.id)}
+                    >
+                      Biblioteca
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            )
+          })}
         </section>
       </main>
     </div>
