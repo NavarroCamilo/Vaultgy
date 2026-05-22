@@ -6,19 +6,19 @@ import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
-    constructor() {
-        const connectionString = process.env.DATABASE_URL;
+  constructor() {
+    const connectionString = process.env.DATABASE_URL;
 
-        if (!connectionString) {
-            throw new Error('DATABASE_URL is required');
-        }
-
-        super({
-            adapter: new PrismaPg({ connectionString }),
-        });
+    if (!connectionString) {
+      throw new Error('DATABASE_URL is required');
     }
 
-    async onModuleInit() {
-        await this.$connect();
-    }
+    super({
+      adapter: new PrismaPg({ connectionString }),
+    });
+  }
+
+  async onModuleInit() {
+    await this.$connect();
+  }
 }

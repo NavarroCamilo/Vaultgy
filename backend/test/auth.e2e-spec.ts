@@ -49,7 +49,9 @@ describe('Auth (e2e)', () => {
   });
 
   it('GET /auth/profile returns current user (guard mocked)', async () => {
-    const res = await request(app.getHttpServer()).get('/auth/profile').expect(200);
+    const res = await request(app.getHttpServer())
+      .get('/auth/profile')
+      .expect(200);
     expect(res.body).toEqual(mockUser);
   });
 });

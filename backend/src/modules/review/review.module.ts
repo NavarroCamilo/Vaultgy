@@ -6,9 +6,9 @@ import { ReviewController } from './review.controller';
 import { ReviewService } from './review.service';
 
 @Module({
-	imports: [PrismaModule, AuthModule],
-	controllers: [ReviewController],
-	providers: [ReviewService],
-	exports: [ReviewService],
+  imports: [PrismaModule, AuthModule],
+  controllers: [ReviewController],
+  providers: [ReviewService],
+  exports: [ReviewService],
 })
 export class ReviewModule {}

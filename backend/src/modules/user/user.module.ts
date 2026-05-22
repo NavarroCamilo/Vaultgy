@@ -7,11 +7,9 @@ import { ReviewModule } from '../review/review.module';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
-
 @Module({
-    imports: [AuthModule, WishlistModule, LibraryModule, ReviewModule],
-    controllers: [UserController],
-    providers: [UserService],
-
+  imports: [AuthModule, WishlistModule, LibraryModule, ReviewModule],
+  controllers: [UserController],
+  providers: [UserService],
 })
 export class UserModule {}

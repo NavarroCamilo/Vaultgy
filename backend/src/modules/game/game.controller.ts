@@ -33,7 +33,8 @@ export class GameController {
   @Get()
   @ApiOperation({ summary: 'List all games' })
   findAll(@Query('take') take?: string) {
-    const parsedTake = take === undefined ? undefined : Number.parseInt(take, 10);
+    const parsedTake =
+      take === undefined ? undefined : Number.parseInt(take, 10);
 
     return this.gameService.findAll(
       Number.isNaN(parsedTake) ? undefined : parsedTake,
@@ -43,7 +44,13 @@ export class GameController {
   @Get('paged')
   @ApiOperation({ summary: 'List games with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 10, enum: [10, 25, 50] })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    type: Number,
+    example: 10,
+    enum: [10, 25, 50],
+  })
   findAllPaged(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(10), ParseIntPipe) pageSize: number,
@@ -53,10 +60,7 @@ export class GameController {
 
   @Get('search')
   @ApiOperation({ summary: 'Search games by title or genre' })
-  search(
-    @Query('column') column: string,
-    @Query('value') value: string,
-  ) {
+  search(@Query('column') column: string, @Query('value') value: string) {
     return this.gameService.searchByColumn(column, value);
   }
 
@@ -65,7 +69,13 @@ export class GameController {
   @ApiQuery({ name: 'column', required: true, enum: ['title', 'genre'] })
   @ApiQuery({ name: 'value', required: true, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 10, enum: [10, 25, 50] })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    type: Number,
+    example: 10,
+    enum: [10, 25, 50],
+  })
   searchPaged(
     @Query('column') column: string,
     @Query('value') value: string,
@@ -95,10 +105,7 @@ export class GameController {
   @Roles('ADMIN')
   @ApiCookieAuth('auth_token')
   @ApiOperation({ summary: 'Update a game' })
-  update(
-    @Param('id') id: string,
-    @Body() updateGameDto: UpdateGameDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateGameDto: UpdateGameDto) {
     return this.gameService.update(id, updateGameDto);
   }
 

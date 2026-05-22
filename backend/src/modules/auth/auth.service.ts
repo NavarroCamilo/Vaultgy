@@ -1,9 +1,9 @@
 import 'dotenv/config';
 
 import {
-	BadRequestException,
-	Injectable,
-	UnauthorizedException,
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, Role, User } from '@prisma/client';
@@ -20,141 +20,144 @@ type AuthenticatedRequest = Request & { user?: PublicUser };
 
 @Injectable()
 export class AuthService {
-	constructor(
-		private readonly prisma: PrismaService,
-		private readonly jwtService: JwtService,
-	) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-	private readonly publicUserSelect = {
-		id: true,
-		username: true,
-		email: true,
-		role: true,
-	} as const;
+  private readonly publicUserSelect = {
+    id: true,
+    username: true,
+    email: true,
+    role: true,
+  } as const;
 
-	private toPublicUser(user: User): PublicUser {
-		return {
-			id: user.id,
-			username: user.username,
-			email: user.email,
-			role: user.role,
-		};
-	}
+  private toPublicUser(user: User): PublicUser {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    };
+  }
 
-	async validateUser(email: string, password: string) {
-		const user = await this.prisma.user.findUnique({
-			where: { email },
-		});
+  async validateUser(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
 
-		if (!user) {
-			return null;
-		}
+    if (!user) {
+      return null;
+    }
 
-		const passwordMatches = await compare(password, user.password);
+    const passwordMatches = await compare(password, user.password);
 
-		if (!passwordMatches) {
-			return null;
-		}
+    if (!passwordMatches) {
+      return null;
+    }
 
-		return user;
-	}
+    return user;
+  }
 
-	async register(registerDto: RegisterDto) {
-		const passwordHash = await hash(registerDto.password, 10);
+  async register(registerDto: RegisterDto) {
+    const passwordHash = await hash(registerDto.password, 10);
 
-		try {
-			const user = await this.prisma.user.create({
-				data: {
-					username: registerDto.username,
-					email: registerDto.email,
-					password: passwordHash,
-					role: Role.USER,
-				},
-				select: this.publicUserSelect,
-			});
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          username: registerDto.username,
+          email: registerDto.email,
+          password: passwordHash,
+          role: Role.USER,
+        },
+        select: this.publicUserSelect,
+      });
 
-			return user;
-		} catch (error) {
-			if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-				throw new BadRequestException('Username or email already exists');
-			}
+      return user;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new BadRequestException('Username or email already exists');
+      }
 
-			throw error;
-		}
-	}
+      throw error;
+    }
+  }
 
-	async login(loginDto: LoginDto) {
-		const user = await this.validateUser(loginDto.email, loginDto.password);
+  async login(loginDto: LoginDto) {
+    const user = await this.validateUser(loginDto.email, loginDto.password);
 
-		if (!user) {
-			throw new UnauthorizedException('Invalid credentials');
-		}
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-		const secret = process.env.JWT_SECRET;
+    const secret = process.env.JWT_SECRET;
 
-		if (!secret) {
-			throw new BadRequestException('JWT_SECRET is required');
-		}
+    if (!secret) {
+      throw new BadRequestException('JWT_SECRET is required');
+    }
 
-		const token = await this.jwtService.signAsync(
-			{
-				sub: user.id,
-				email: user.email,
-				role: user.role,
-			},
-			{ secret },
-		);
+    const token = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      { secret },
+    );
 
-		return {
-			token,
-			user: this.toPublicUser(user),
-		};
-	}
+    return {
+      token,
+      user: this.toPublicUser(user),
+    };
+  }
 
-	async getProfile(request: AuthenticatedRequest) {
-		const user = request.user as PublicUser | undefined;
+  async getProfile(request: AuthenticatedRequest) {
+    const user = request.user;
 
-		if (!user) {
-			throw new UnauthorizedException('Authentication required');
-		}
+    if (!user) {
+      throw new UnauthorizedException('Authentication required');
+    }
 
-		return user;
-	}
+    return user;
+  }
 
-	async updatePassword(
-		request: AuthenticatedRequest,
-		updatePasswordDto: UpdatePasswordDto,
-	) {
-		const authUser = request.user as PublicUser | undefined;
+  async updatePassword(
+    request: AuthenticatedRequest,
+    updatePasswordDto: UpdatePasswordDto,
+  ) {
+    const authUser = request.user;
 
-		if (!authUser) {
-			throw new UnauthorizedException('Authentication required');
-		}
+    if (!authUser) {
+      throw new UnauthorizedException('Authentication required');
+    }
 
-		const user = await this.prisma.user.findUnique({
-			where: { id: authUser.id },
-		});
+    const user = await this.prisma.user.findUnique({
+      where: { id: authUser.id },
+    });
 
-		if (!user) {
-			throw new UnauthorizedException('User not found');
-		}
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
 
-		const passwordMatches = await compare(
-			updatePasswordDto.currentPassword,
-			user.password,
-		);
+    const passwordMatches = await compare(
+      updatePasswordDto.currentPassword,
+      user.password,
+    );
 
-		if (!passwordMatches) {
-			throw new UnauthorizedException('Invalid credentials');
-		}
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-		const passwordHash = await hash(updatePasswordDto.newPassword, 10);
+    const passwordHash = await hash(updatePasswordDto.newPassword, 10);
 
-		await this.prisma.user.update({
-			where: { id: user.id },
-			data: { password: passwordHash },
-		});
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: passwordHash },
+    });
 
-		return true;
-	}
+    return true;
+  }
 }

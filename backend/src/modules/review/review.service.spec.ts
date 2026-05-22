@@ -19,7 +19,7 @@ describe('ReviewService (unit)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new ReviewService(mockPrisma as any);
+    service = new ReviewService(mockPrisma);
   });
 
   it('create throws ConflictException if review already exists', async () => {
@@ -37,10 +37,19 @@ describe('ReviewService (unit)', () => {
     mockPrisma.review.findFirst.mockResolvedValue(null);
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'u1' });
     mockPrisma.game.findUnique.mockResolvedValue({ id: 'g1' });
-    const created = { id: 'r2', rating: 9, comment: 'great', userId: 'u1', gameId: 'g1' };
+    const created = {
+      id: 'r2',
+      rating: 9,
+      comment: 'great',
+      userId: 'u1',
+      gameId: 'g1',
+    };
     mockPrisma.review.create.mockResolvedValue(created);
 
-    const result = await service.createForUser('u1', 'g1', { rating: 9, comment: 'great' });
+    const result = await service.createForUser('u1', 'g1', {
+      rating: 9,
+      comment: 'great',
+    });
 
     expect(result).toEqual(created);
     expect(mockPrisma.review.create).toHaveBeenCalled();

@@ -15,7 +15,7 @@ describe('UserService (unit)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new UserService(mockPrisma as any);
+    service = new UserService(mockPrisma);
   });
 
   it('updateUser returns updated user on success', async () => {
@@ -39,8 +39,8 @@ describe('UserService (unit)', () => {
 
     mockPrisma.user.update.mockRejectedValue(err);
 
-    await expect(service.updateUser('u1', { username: 'taken' })).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(
+      service.updateUser('u1', { username: 'taken' }),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 });

@@ -15,13 +15,13 @@ describe('GameService (unit)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new GameService(mockPrisma as any);
+    service = new GameService(mockPrisma);
   });
 
   it('searchPagedByColumn throws on invalid column and returns paged result for valid column', async () => {
-    await expect(service.searchPagedByColumn('invalid', 'x', 1, 10)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      service.searchPagedByColumn('invalid', 'x', 1, 10),
+    ).rejects.toBeInstanceOf(BadRequestException);
 
     // valid path
     const games = [{ id: 'g1', title: 'T', genre: 'G' }];

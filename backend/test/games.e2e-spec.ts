@@ -32,7 +32,9 @@ describe('Games (e2e)', () => {
   });
 
   it('GET /games/paged returns paged games', async () => {
-    const res = await request(app.getHttpServer()).get('/games/paged').expect(200);
+    const res = await request(app.getHttpServer())
+      .get('/games/paged')
+      .expect(200);
     expect(res.body).toEqual(mockPaged);
   });
 

@@ -9,10 +9,19 @@ import { RolesGuard } from '../src/guards/roles.guard';
 describe('Reviews (e2e)', () => {
   let app: INestApplication;
 
-  const created = { id: 'r1', rating: 8, comment: 'ok', userId: 'u1', gameId: 'g1' };
+  const created = {
+    id: 'r1',
+    rating: 8,
+    comment: 'ok',
+    userId: 'u1',
+    gameId: 'g1',
+  };
   const mockReviewService = {
     create: jest.fn().mockResolvedValue(created),
-    findAllByGamePaged: jest.fn().mockResolvedValue({ data: [created], meta: { total: 1, page: 1, pageSize: 10, totalPages: 1 } }),
+    findAllByGamePaged: jest.fn().mockResolvedValue({
+      data: [created],
+      meta: { total: 1, page: 1, pageSize: 10, totalPages: 1 },
+    }),
   };
 
   beforeAll(async () => {
@@ -43,7 +52,9 @@ describe('Reviews (e2e)', () => {
   });
 
   it('GET /reviews/game/:gameId/paged returns paged reviews', async () => {
-    const res = await request(app.getHttpServer()).get('/reviews/game/g1/paged').expect(200);
+    const res = await request(app.getHttpServer())
+      .get('/reviews/game/g1/paged')
+      .expect(200);
     expect(res.body.data[0]).toEqual(created);
   });
 });
