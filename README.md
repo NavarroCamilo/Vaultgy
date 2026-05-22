@@ -151,16 +151,6 @@ cd backend
 pnpm test:e2e
 ```
 
-### Optional Lint
-
-```bash
-cd backend
-pnpm lint
-
-cd ../frontend
-pnpm lint
-```
-
 ## Technical Summary
 
 - Backend: NestJS, Prisma, PostgreSQL, JWT in cookies.
